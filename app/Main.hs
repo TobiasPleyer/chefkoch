@@ -45,6 +45,7 @@ data Unit = None
           | BigSpoon
           | Package
           | Slice
+          | Pinch
           | Unknown
           deriving (Eq, Show)
 
@@ -61,7 +62,6 @@ data Recipe = Recipe
                       , Unit    -- ^ The unit corresponding to the quantity
                       )]
     , instruction :: String
-    , portions :: Int
     } deriving (Eq, Show)
 
 
@@ -120,6 +120,31 @@ normalize (x:xs) =
 normalize [] = []
 
 
+notEmptyText :: Tag T.Text -> Bool
+notEmptyText (TagText t)
+  | t == T.empty = False
+notEmptyText _   = True
+
+
+wanted :: Tag T.Text -> Bool
+wanted (TagOpen  t _)
+  | t == T.pack "tr"   = False
+  | t == T.pack "td"   = False
+  | t == T.pack "span" = False
+wanted (TagClose t)
+  | t == T.pack "tr"   = False
+  | t == T.pack "td"   = False
+  | t == T.pack "span" = False
+  | t == T.pack "a"    = False
+wanted _               = True
+
+
+subGroups :: Int -> [a] -> [[a]]
+subGroups n xs
+  | length xs < n = []
+  | otherwise     = (take n xs) : subGroups n (drop n xs)
+
+
 extractRecipeTable :: [Tag T.Text] -> [Tag T.Text]
 extractRecipeTable = takeWhile (~/= TagClose "table")
                    . tail
@@ -128,47 +153,52 @@ extractRecipeTable = takeWhile (~/= TagClose "table")
 
 extractRecipeInfo :: T.Text -> [[T.Text]]
 extractRecipeInfo = map (map clearTag)
-                  . splitList 4
-                  . filter (\t -> notEmptyText t && notTableTag t)
+                  . subGroups 4
+                  . filter (\t -> notEmptyText t
+                               && wanted t)
                   . normalize
                   . extractRecipeTable
                   . parseTags
     where
-      notEmptyText (TagText t)
-        | t == T.empty = False
-      notEmptyText _   = True
-
-      notTableTag (TagOpen  t _)
-        | t == T.pack "tr"   = False
-        | t == T.pack "td"   = False
-        | t == T.pack "span" = False
-      notTableTag (TagClose t)
-        | t == T.pack "tr"   = False
-        | t == T.pack "td"   = False
-        | t == T.pack "span" = False
-        | t == T.pack "a"    = False
-      notTableTag _          = True
-
-      splitList n xs
-        | length xs < n = []
-        | otherwise     = (take n xs) : splitList n (drop n xs)
-
-      --clearTag :: Tag T.Text -> T.Text
+      clearTag :: Tag T.Text -> T.Text
       clearTag (TagText t) = t
       clearTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
       clearTag _ = T.empty
 
 
-extractCookingInstructions :: T.Text -> ([(String,Float,Unit)], String, Int)
-extractCookingInstructions website = (ingredients,instructions,portions)
+handleFractions :: [Tag T.Text] -> [Tag T.Text]
+handleFractions [] = []
+handleFractions tags@(t:ts)
+  | t ~== "<sup>" = (TagText (innerText (take 8 tags))) : handleFractions (drop 8 tags)
+  | otherwise     = t : handleFractions ts
+
+
+the_func = ( subGroups 2
+           . handleFractions
+           . filter (\t -> (t ~/= "<a>")
+                        && (t ~/= "</a>")
+                        && notEmptyText t
+                        && wanted t)
+           . normalize
+           . takeWhile (~/= "</table>")
+           . tail
+           . dropWhile (~/= "<table class=incredients>"))
+
+
+extractCookingInstructions :: T.Text -> ([(String,Float,Unit)], String)
+extractCookingInstructions website = (ingredients,instructions)
   where
-    portions = 4
     ingredients = []
+    --ingredients = (
+    --              . normalize
+    --              . takeWhile (~/= "</table>")
+    --              . tail
+    --              . dropWhile (~/= "<table class=incredients>")) tags
     instructions = ( T.unpack
                    . innerText
                    . normalize
                    . takeWhile (~/= "</div>")
-                   . dropWhile (~/= "<div id=rezept-zubereitung")) tags
+                   . dropWhile (~/= "<div id=rezept-zubereitung>")) tags
     tags = parseTags website
 
 
@@ -176,7 +206,7 @@ mkRecipe year month [day, weekday, relative_url, name] = do
   let base_url = "https://www.chefkoch.de"
       recipe_url = base_url ++ (T.unpack relative_url)
   webcontent <- wgetURL recipe_url
-  let (ingredients,instructions,portions) = extractCookingInstructions webcontent
+  let (ingredients,instructions) = extractCookingInstructions webcontent
   return (Recipe
            (read (T.unpack (T.init day)))
            (str2Weekday (T.unpack weekday))
@@ -185,8 +215,7 @@ mkRecipe year month [day, weekday, relative_url, name] = do
            (T.unpack name)
            recipe_url
            ingredients
-           instructions
-           portions)
+           instructions)
 
 
 fetchRecipes :: Year -> Month -> IO [Recipe]
