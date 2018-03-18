@@ -1,0 +1,35 @@
+name:                leChef
+version:             0.9.0.0
+github:              "githubuser/leChef"
+license:             BSD3
+author:              "Tobias Pleyer"
+maintainer:          "tobi.pleyer@gmail.com"
+copyright:           "2018 Tobias Pleyer"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/githubuser/leChef#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- HTTP
+- process
+- tagsoup
+- text
+
+executables:
+  leChef-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
