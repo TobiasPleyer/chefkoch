@@ -1,9 +1,11 @@
 import Control.Monad
 import Data.Char
+import Data.List hiding (groupBy)
 import qualified Data.Text as T
 import Data.Foldable
 import Network.HTTP
 import System.Process
+import System.IO
 import Text.HTML.TagSoup
 import Text.StringLike
 
@@ -36,20 +38,6 @@ data Month = January
 type Year = Int
 
 
-data Unit = None
-          | Liter
-          | Milliliter
-          | Gram
-          | Kilogram
-          | SmallSpoon
-          | BigSpoon
-          | Package
-          | Slice
-          | Pinch
-          | Unknown
-          deriving (Eq, Show)
-
-
 data Recipe = Recipe
     { day :: Int
     , weekday :: Weekday
@@ -57,10 +45,7 @@ data Recipe = Recipe
     , year :: Year
     , name :: String
     , url :: String
-    , ingredients :: [( String  -- ^ The name of the ingredient
-                      , Float   -- ^ The quantity
-                      , Unit    -- ^ The unit corresponding to the quantity
-                      )]
+    , ingredients :: [String]
     , instruction :: String
     } deriving (Eq, Show)
 
@@ -90,8 +75,8 @@ str2Weekday "(Sa)" = Saturday
 str2Weekday "(So)" = Sunday
 
 
---openURL :: String -> IO String
-openURL url = getResponseBody =<< simpleHTTP (getRequest url)
+openURL :: String -> IO T.Text
+openURL url = fmap T.pack $ getResponseBody =<< simpleHTTP (getRequest url)
 
 
 wgetURL :: String -> IO T.Text
@@ -101,6 +86,12 @@ wgetURL url = do
       wgetArgs = [url, "-qO-"]
     htmlString <- readProcess wgetPath wgetArgs ""
     return (T.pack htmlString)
+
+
+fileURL :: String -> IO T.Text
+fileURL f = do
+    filecontent <- readFile f
+    return (T.pack filecontent)
 
 
 fetchRecipeOverview :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
@@ -145,6 +136,20 @@ subGroups n xs
   | otherwise     = (take n xs) : subGroups n (drop n xs)
 
 
+groupBy :: String -> [Tag T.Text] -> [[Tag T.Text]]
+groupBy tagString tags = go tags
+  where
+    tagText = T.pack tagString
+    openTag = TagOpen tagText []
+    closeTag = TagClose tagText
+    go xs
+      | null taken = []
+      | length rest < 2 = [taken]
+      | otherwise  = taken : go (tail rest)
+      where
+        (taken,rest) = (span (~/= closeTag) . tail . dropWhile (~/= openTag)) xs
+
+
 extractRecipeTable :: [Tag T.Text] -> [Tag T.Text]
 extractRecipeTable = takeWhile (~/= TagClose "table")
                    . tail
@@ -173,33 +178,23 @@ handleFractions tags@(t:ts)
   | otherwise     = t : handleFractions ts
 
 
-the_func = ( subGroups 2
-           . handleFractions
-           . filter (\t -> (t ~/= "<a>")
-                        && (t ~/= "</a>")
-                        && notEmptyText t
-                        && wanted t)
-           . normalize
-           . takeWhile (~/= "</table>")
-           . tail
-           . dropWhile (~/= "<table class=incredients>"))
-
-
-extractCookingInstructions :: T.Text -> ([(String,Float,Unit)], String)
+extractCookingInstructions :: T.Text -> ([String], String)
 extractCookingInstructions website = (ingredients,instructions)
   where
-    ingredients = []
-    --ingredients = (
-    --              . normalize
-    --              . takeWhile (~/= "</table>")
-    --              . tail
-    --              . dropWhile (~/= "<table class=incredients>")) tags
+    tags = parseTags website
+    ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
+                  . groupBy "tr"
+                  . handleFractions
+                  . filter notEmptyText
+                  . normalize
+                  . takeWhile (~/= "</table>")
+                  . tail
+                  . dropWhile (~/= "<table class=incredients>")) tags
     instructions = ( T.unpack
                    . innerText
                    . normalize
                    . takeWhile (~/= "</div>")
                    . dropWhile (~/= "<div id=rezept-zubereitung>")) tags
-    tags = parseTags website
 
 
 mkRecipe year month [day, weekday, relative_url, name] = do
@@ -222,7 +217,7 @@ fetchRecipes :: Year -> Month -> IO [Recipe]
 fetchRecipes year month = do
     webcontent <- fetchRecipeOverview wgetURL year month
     let raw_info = extractRecipeInfo webcontent
-    mapM (mkRecipe year month) [head raw_info]
+    mapM (mkRecipe year month) raw_info
 
 
 main = do
