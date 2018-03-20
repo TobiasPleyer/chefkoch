@@ -7,6 +7,7 @@ import Data.List hiding (groupBy)
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 import Text.StringLike
+
 import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
 import Chefkoch.Http

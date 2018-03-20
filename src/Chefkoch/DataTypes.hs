@@ -31,12 +31,12 @@ type Year = Int
 
 
 data Recipe = Recipe
-    { day :: Day
-    , weekday :: Weekday
-    , month :: Month
-    , year :: Year
-    , name :: String
-    , url :: String
-    , ingredients :: [String]
-    , instruction :: String
+    { recipeDay :: Day
+    , recipeWeekday :: Weekday
+    , recipeMonth :: Month
+    , recipeYear :: Year
+    , recipeName :: String
+    , recipeUrl :: String
+    , recipeIngredients :: [String]
+    , recipeInstruction :: String
     } deriving (Eq, Show)

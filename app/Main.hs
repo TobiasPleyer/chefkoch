@@ -1,4 +1,6 @@
 import Control.Monad
+import Options.Applicative
+
 import Chefkoch.CmdLine
 import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
@@ -7,8 +9,7 @@ import Chefkoch.Html
 
 
 main = do
-    let
-      year = 2018
-      month = February
-    recipes <- fetchRecipes year month
-    forM_ recipes print
+    options <- execParser optionParser
+    print options
+    --recipes <- fetchRecipes 2018 February
+    --forM_ recipes print
