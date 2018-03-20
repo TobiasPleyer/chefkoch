@@ -35,11 +35,12 @@ data Month = January
            deriving (Eq, Show)
 
 
+type Day = Int
 type Year = Int
 
 
 data Recipe = Recipe
-    { day :: Int
+    { day :: Day
     , weekday :: Weekday
     , month :: Month
     , year :: Year
