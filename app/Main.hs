@@ -1,4 +1,5 @@
 import Control.Monad
+import Data.Maybe (fromJust)
 import Options.Applicative
 
 import Chefkoch.CmdLine
@@ -10,6 +11,5 @@ import Chefkoch.Html
 
 main = do
     options <- execParser optionParser
-    print options
-    --recipes <- fetchRecipes 2018 February
-    --forM_ recipes print
+    recipes <- fetchRecipes ((fromJust . optionYear) options) ((fromJust . int2Month . fromJust . optionMonth) options)
+    forM_ recipes print

@@ -1,6 +1,7 @@
 module Chefkoch.Html where
 
 
+import Data.Maybe (fromJust)
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 
@@ -18,7 +19,7 @@ mkRecipe year month [day, weekday, relative_url, name] = do
   let (ingredients,instructions) = parseCookingInstructions webcontent
   return (Recipe
            (read (T.unpack (T.init day)))
-           (str2Weekday (T.unpack weekday))
+           (fromJust (str2Weekday (T.unpack weekday)))
            month
            year
            (T.unpack name)
