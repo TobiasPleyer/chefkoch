@@ -20,10 +20,20 @@ description:         Please see the README on Github at <https://github.com/Tobi
 
 dependencies:
 - base >= 4.7 && < 5
-- HTTP
-- process
-- tagsoup
 - text
+
+library:
+  source-dirs: src
+  other-extensions:
+  - CPP
+  - ForeignFunctionInterface
+  - OverloadedStrings
+  - RecordWildCards
+  dependencies:
+  - array
+  - HTTP
+  - process
+  - tagsoup
 
 executables:
   chefkoch-exe:
@@ -33,3 +43,6 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    dependencies:
+    - array
+    - chefkoch
