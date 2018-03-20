@@ -1,6 +1,6 @@
-name:                leChef
+name:                chefkoch
 version:             0.9.0.0
-github:              "githubuser/leChef"
+github:              "TobiasPleyer/chefkoch"
 license:             BSD3
 author:              "Tobias Pleyer"
 maintainer:          "tobi.pleyer@gmail.com"
@@ -16,7 +16,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/githubuser/leChef#readme>
+description:         Please see the README on Github at <https://github.com/TobiasPleyer/chefkoch#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -26,7 +26,7 @@ dependencies:
 - text
 
 executables:
-  leChef-exe:
+  chefkoch-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
