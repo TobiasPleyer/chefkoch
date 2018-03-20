@@ -29,8 +29,8 @@ fileURL f = do
     return (T.pack filecontent)
 
 
-fetchRecipeOverview :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
-fetchRecipeOverview grabber year month = do
+fetchRecipeListing :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
+fetchRecipeListing grabber year month = do
     let url = ("https://www.chefkoch.de/rezept-des-tages.php?month="
                ++ show (month2Int month)
                ++ "&year="

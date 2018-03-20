@@ -11,53 +11,7 @@ import Text.StringLike
 import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
 import Chefkoch.Http
-
-
-normalize :: [Tag T.Text] -> [Tag T.Text]
-normalize (x:xs) =
-  case x of
-    TagText t -> TagText (T.unwords (T.words t)) : normalize xs
-    _         -> x : normalize xs
-normalize [] = []
-
-
-notEmptyText :: Tag T.Text -> Bool
-notEmptyText (TagText t)
-  | t == T.empty = False
-notEmptyText _   = True
-
-
-wanted :: Tag T.Text -> Bool
-wanted (TagOpen  t _)
-  | t == T.pack "tr"   = False
-  | t == T.pack "td"   = False
-  | t == T.pack "span" = False
-wanted (TagClose t)
-  | t == T.pack "tr"   = False
-  | t == T.pack "td"   = False
-  | t == T.pack "span" = False
-  | t == T.pack "a"    = False
-wanted _               = True
-
-
-subGroups :: Int -> [a] -> [[a]]
-subGroups n xs
-  | length xs < n = []
-  | otherwise     = (take n xs) : subGroups n (drop n xs)
-
-
-groupBy :: String -> [Tag T.Text] -> [[Tag T.Text]]
-groupBy tagString tags = go tags
-  where
-    tagText = T.pack tagString
-    openTag = TagOpen tagText []
-    closeTag = TagClose tagText
-    go xs
-      | null taken = []
-      | length rest < 2 = [taken]
-      | otherwise  = taken : go (tail rest)
-      where
-        (taken,rest) = (span (~/= closeTag) . tail . dropWhile (~/= openTag)) xs
+import Chefkoch.Html.Util
 
 
 extractRecipeTable :: [Tag T.Text] -> [Tag T.Text]
@@ -67,25 +21,30 @@ extractRecipeTable = takeWhile (~/= TagClose "table")
 
 
 extractRecipeInfo :: T.Text -> [[T.Text]]
-extractRecipeInfo = map (map clearTag)
+extractRecipeInfo = map (map unTag)
                   . subGroups 4
                   . filter (\t -> notEmptyText t
-                               && wanted t)
+                               && isNeeded t)
                   . normalize
                   . extractRecipeTable
                   . parseTags
     where
-      clearTag :: Tag T.Text -> T.Text
-      clearTag (TagText t) = t
-      clearTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
-      clearTag _ = T.empty
+      unTag :: Tag T.Text -> T.Text
+      unTag (TagText t) = t
+      unTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
+      unTag _ = T.empty
 
-
-handleFractions :: [Tag T.Text] -> [Tag T.Text]
-handleFractions [] = []
-handleFractions tags@(t:ts)
-  | t ~== "<sup>" = (TagText (innerText (take 8 tags))) : handleFractions (drop 8 tags)
-  | otherwise     = t : handleFractions ts
+      isNeeded :: Tag T.Text -> Bool
+      isNeeded (TagOpen  t _)
+        | t == T.pack "tr"   = False
+        | t == T.pack "td"   = False
+        | t == T.pack "span" = False
+      isNeeded (TagClose t)
+        | t == T.pack "tr"   = False
+        | t == T.pack "td"   = False
+        | t == T.pack "span" = False
+        | t == T.pack "a"    = False
+      isNeeded _               = True
 
 
 extractCookingInstructions :: T.Text -> ([String], String)
@@ -94,7 +53,7 @@ extractCookingInstructions website = (ingredients,instructions)
     tags = parseTags website
     ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
                   . groupBy "tr"
-                  . handleFractions
+                  . convertFraction
                   . filter notEmptyText
                   . normalize
                   . takeWhile (~/= "</table>")
@@ -125,6 +84,6 @@ mkRecipe year month [day, weekday, relative_url, name] = do
 
 fetchRecipes :: Year -> Month -> IO [Recipe]
 fetchRecipes year month = do
-    webcontent <- fetchRecipeOverview wgetURL year month
+    webcontent <- fetchRecipeListing wgetURL year month
     let raw_info = extractRecipeInfo webcontent
     mapM (mkRecipe year month) raw_info
