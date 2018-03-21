@@ -14,6 +14,7 @@ data Options = Options
   , optionLink :: Maybe String
   , optionLinksOnly :: Bool
   , optionRandom :: Bool
+  , optionOutput :: String
   } deriving (Show)
 
 
@@ -46,6 +47,12 @@ chefkochOptions = Options
              ( long "random"
              <> short 'r'
              <> help "Wheter to choose a recipe at random")
+         <*> strOption
+             ( long "output"
+               <> short 'o'
+               <> metavar "FILE"
+               <> value "-"
+               <> help "The link (url) of the recipe to be downloaded")
 
 
 optionParser = info (chefkochOptions <**> helper)
