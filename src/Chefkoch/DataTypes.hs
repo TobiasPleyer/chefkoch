@@ -31,10 +31,10 @@ type Year = Int
 
 
 data Recipe = Recipe
-    { recipeDay :: Day
-    , recipeWeekday :: Weekday
-    , recipeMonth :: Month
-    , recipeYear :: Year
+    { recipeDay :: Maybe Day
+    , recipeWeekday :: Maybe Weekday
+    , recipeMonth :: Maybe Month
+    , recipeYear :: Maybe Year
     , recipeName :: String
     , recipeUrl :: String
     , recipeIngredients :: [String]

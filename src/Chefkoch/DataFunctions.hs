@@ -20,7 +20,7 @@ month2Int December = 12
 
 
 int2Month :: Int -> Maybe Month
-int2Month n  = case n of
+int2Month n = case n of
   1  -> Just January
   2  -> Just February
   3  -> Just March
@@ -34,6 +34,23 @@ int2Month n  = case n of
   11 -> Just November
   12 -> Just December
   _  -> Nothing
+
+
+unsafeInt2Month :: Int -> Month
+unsafeInt2Month n = case n of
+  1  -> January
+  2  -> February
+  3  -> March
+  4  -> April
+  5  -> May
+  6  -> June
+  7  -> July
+  8  -> August
+  9  -> September
+  10 -> October
+  11 -> November
+  12 -> December
+  _  -> undefined
 
 
 str2Weekday :: String -> Maybe Weekday

@@ -4,6 +4,9 @@ module Chefkoch.Html.Util where
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 
+import Chefkoch.DataTypes
+import Chefkoch.DataFunctions
+
 
 normalize :: [Tag T.Text] -> [Tag T.Text]
 normalize (x:xs) =
@@ -44,3 +47,17 @@ convertFraction [] = []
 convertFraction tags@(t:ts)
   | t ~== "<sup>" = (TagText (innerText (take 8 tags))) : convertFraction (drop 8 tags)
   | otherwise     = t : convertFraction ts
+
+
+mkPartialRecipe [day, weekday, relative_url, name] =
+  let base_url = "https://www.chefkoch.de"
+      recipe_url = base_url ++ (T.unpack relative_url)
+  in (Recipe
+       (Just (read (T.unpack (T.init day))))
+       (str2Weekday (T.unpack weekday))
+       Nothing
+       Nothing
+       (T.unpack name)
+       recipe_url
+       []
+       "")

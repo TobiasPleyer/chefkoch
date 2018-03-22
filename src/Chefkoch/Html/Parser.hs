@@ -4,6 +4,7 @@ module Chefkoch.Html.Parser where
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 
+import Chefkoch.DataTypes
 import Chefkoch.Html.Util
 
 
@@ -13,14 +14,16 @@ parseRecipeTable = takeWhile (~/= TagClose "table")
                    . dropWhile (~/= TagOpen "table" [("class", "table-day")])
 
 
-parseRecipeInfo :: T.Text -> [[T.Text]]
-parseRecipeInfo = map (map unTag)
-                  . subGroups 4
-                  . filter (\t -> notEmptyText t
-                               && isNeeded t)
-                  . normalize
-                  . parseRecipeTable
-                  . parseTags
+parseMonthlyRecipeListing :: T.Text -> [Recipe]
+parseMonthlyRecipeListing =
+    map mkPartialRecipe
+      . map (map unTag)
+      . subGroups 4
+      . filter (\t -> notEmptyText t
+                   && isNeeded t)
+      . normalize
+      . parseRecipeTable
+      . parseTags
     where
       unTag :: Tag T.Text -> T.Text
       unTag (TagText t) = t
@@ -40,8 +43,8 @@ parseRecipeInfo = map (map unTag)
       isNeeded _               = True
 
 
-parseCookingInstructions :: T.Text -> ([String], String)
-parseCookingInstructions website = (ingredients,instructions)
+parseRecipePage :: T.Text -> ([String], String)
+parseRecipePage website = (ingredients,instructions)
   where
     tags = parseTags website
     ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
