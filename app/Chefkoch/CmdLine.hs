@@ -51,7 +51,7 @@ chefkochOptions = Options
              ( long "output"
                <> short 'o'
                <> metavar "FILE"
-               <> value "-"
+               <> value "recipe"
                <> help "The link (url) of the recipe to be downloaded")
 
 

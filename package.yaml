@@ -37,7 +37,7 @@ library:
   - time
 
 executables:
-  chefkoch-exe:
+  chefkoch:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
