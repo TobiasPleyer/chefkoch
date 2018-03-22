@@ -11,9 +11,6 @@ import Chefkoch.Http
 import Chefkoch.Util
 
 
-formatRecipe = show
-
-
 run :: Options -> IO ()
 run (Options
        year
@@ -26,11 +23,16 @@ run (Options
     ) = do
     let
       month = fmap unsafeInt2Month monthInt
-    recipes <- if isJust link
+    recipes <- if random
                then do
-                 recipe <- wgetDownloadRecipeByLink (fromJust link)
-                 return [recipe]
-               else wgetDownloadRecipesByDate (year, month, day)
+                 (year,month,day) <- getRandomYearMonthDay
+                 wgetDownloadRecipesByDate linksOnly (Just year, Just month, Just day)
+               else
+                 if isJust link
+                 then do
+                   recipe <- wgetDownloadRecipeByLink (fromJust link)
+                   return [recipe]
+                 else wgetDownloadRecipesByDate linksOnly (year, month, day)
     let
       formattedRecipes = map formatRecipe recipes
     if output == "-"
@@ -40,7 +42,7 @@ run (Options
        (openFile output WriteMode)
        (hClose)
        (\h -> forM_
-                (formattedRecipes)
+                formattedRecipes
                 (hPutStrLn h))
 
 

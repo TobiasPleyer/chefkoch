@@ -53,8 +53,11 @@ getRecipeIngredientsAndInstructions grabber recipe = do
   return $ parseRecipePage recipePage
 
 
-downloadRecipesByDate :: (String -> IO T.Text) -> (Maybe Year, Maybe Month, Maybe Day) -> IO [Recipe]
-downloadRecipesByDate grabber (y,m,d) = do
+downloadRecipesByDate :: (String -> IO T.Text)
+                      -> Bool
+                      -> (Maybe Year, Maybe Month, Maybe Day)
+                      -> IO [Recipe]
+downloadRecipesByDate grabber sparse (y,m,d) = do
     (currYear,currMonth,currDay) <- getCurrentYearMonthDay
     let year = fromMaybe currYear y
         month = fromMaybe currMonth m
@@ -63,16 +66,18 @@ downloadRecipesByDate grabber (y,m,d) = do
       partialRecipes = parseMonthlyRecipeListing monthlyListing
       recipes = (map ( modifyRecipeYear (Just year)
                      . modifyRecipeMonth (Just month))) partialRecipes
-    go recipes year month d
+    if sparse
+    then return recipes
+    else go recipes d
     where
-      go :: [Recipe] -> Year -> Month -> Maybe Day -> IO [Recipe]
-      go recipes year month Nothing = do
+      go :: [Recipe] -> Maybe Day -> IO [Recipe]
+      go recipes Nothing = do
         recipeDetails <- forM recipes (getRecipeIngredientsAndInstructions grabber)
         forM (zip recipeDetails recipes) (\((ingr,inst),recipe)
             -> ( return
                . modifyRecipeIngredients ingr
                . modifyRecipeInstruction inst) recipe)
-      go recipes year month day = do
+      go recipes day = do
         let
           maybeRecipe = find (\r -> recipeDay r == day) recipes
         if isNothing maybeRecipe

@@ -33,6 +33,7 @@ library:
   - array
   - HTTP
   - process
+  - random
   - tagsoup
   - time
 

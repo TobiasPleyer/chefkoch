@@ -19,6 +19,21 @@ month2Int November = 11
 month2Int December = 12
 
 
+monthMaxDays :: Month -> Int
+monthMaxDays January = 31
+monthMaxDays February = 28
+monthMaxDays March = 31
+monthMaxDays April = 30
+monthMaxDays May = 31
+monthMaxDays June = 30
+monthMaxDays July = 31
+monthMaxDays August = 31
+monthMaxDays September = 30
+monthMaxDays October = 31
+monthMaxDays November = 30
+monthMaxDays December = 31
+
+
 int2Month :: Int -> Maybe Month
 int2Month n = case n of
   1  -> Just January

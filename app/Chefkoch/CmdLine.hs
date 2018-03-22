@@ -46,7 +46,7 @@ chefkochOptions = Options
          <*> switch
              ( long "random"
              <> short 'r'
-             <> help "Wheter to choose a recipe at random")
+             <> help "Whether to choose a recipe at random")
          <*> strOption
              ( long "output"
                <> short 'o'
