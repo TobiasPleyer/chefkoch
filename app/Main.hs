@@ -9,6 +9,7 @@ import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
 import Chefkoch.Http
 import Chefkoch.Util
+import Chefkoch.Format
 
 
 run :: Options -> IO ()
@@ -20,7 +21,7 @@ run (Options
        linksOnly
        random
        output
-       raw
+       formatter
     ) = do
     let
       month = fmap unsafeInt2Month monthInt
@@ -35,8 +36,14 @@ run (Options
                    return [recipe]
                  else wgetDownloadRecipesByDate linksOnly (year, month, day)
     let
-      formatter = if raw then show else formatRecipe
-      formattedRecipes = map formatter recipes
+      fmLookup = lookup formatter formatterMap
+    fm <- if isNothing fmLookup
+          then do
+            putStrLn ("Unknown formatter '" ++ formatter ++ "', defaulting to 'raw'")
+            return rawFormatter
+          else return (fromJust fmLookup)
+    let
+      formattedRecipes = map fm recipes
     if output == "-"
     then forM_ formattedRecipes putStrLn
     else do

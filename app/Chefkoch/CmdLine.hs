@@ -15,7 +15,7 @@ data Options = Options
   , optionLinksOnly :: Bool
   , optionRandom :: Bool
   , optionOutput :: String
-  , optionsRaw :: Bool
+  , optionsFormatter :: String
   } deriving (Show)
 
 
@@ -46,6 +46,7 @@ chefkochOptions = Options
              <> help "Don't look for the ingredients and instructions, just for the links.")
          <*> switch
              ( long "random"
+             <> short 'r'
              <> help "Whether to choose a recipe at random")
          <*> strOption
              ( long "output"
@@ -53,10 +54,11 @@ chefkochOptions = Options
                <> metavar "FILE"
                <> value "recipe"
                <> help "The link (url) of the recipe to be downloaded")
-         <*> switch
-             ( long "raw"
-             <> short 'r'
-             <> help "If this flag is given the recipe is not formatted before output")
+         <*> strOption
+             ( long "formatter"
+             <> short 'f'
+             <> value "raw"
+             <> help "Specify the formatter to be used for output. Supported values: raw, yaml")
 
 
 optionParser = info (chefkochOptions <**> helper)

@@ -60,7 +60,3 @@ modifyRecipeIngredients ingr r = r{recipeIngredients=ingr}
 
 modifyRecipeInstruction :: String -> Recipe -> Recipe
 modifyRecipeInstruction inst r = r{recipeInstruction=inst}
-
-
-formatRecipe :: Recipe -> String
-formatRecipe = show
