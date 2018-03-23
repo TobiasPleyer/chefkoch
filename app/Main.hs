@@ -20,6 +20,7 @@ run (Options
        linksOnly
        random
        output
+       raw
     ) = do
     let
       month = fmap unsafeInt2Month monthInt
@@ -34,7 +35,8 @@ run (Options
                    return [recipe]
                  else wgetDownloadRecipesByDate linksOnly (year, month, day)
     let
-      formattedRecipes = map formatRecipe recipes
+      formatter = if raw then show else formatRecipe
+      formattedRecipes = map formatter recipes
     if output == "-"
     then forM_ formattedRecipes putStrLn
     else do
