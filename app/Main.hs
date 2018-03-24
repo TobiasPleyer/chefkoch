@@ -1,5 +1,6 @@
 import Control.Monad
 import Control.Exception.Base (bracket)
+import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Maybe (fromJust, isJust, isNothing)
 import Options.Applicative
 import System.IO (openFile, hPutStrLn, hClose, IOMode(..))
@@ -21,7 +22,7 @@ run (Options
        linksOnly
        random
        output
-       formatter
+       format
     ) = do
     let
       month = fmap unsafeInt2Month monthInt
@@ -36,23 +37,17 @@ run (Options
                    return [recipe]
                  else wgetDownloadRecipesByDate linksOnly (year, month, day)
     let
-      fmLookup = lookup formatter formatterMap
-    fm <- if isNothing fmLookup
-          then do
-            putStrLn ("Unknown formatter '" ++ formatter ++ "', defaulting to 'raw'")
-            return rawFormatter
-          else return (fromJust fmLookup)
+      fmLookup = lookup format formatterMap
+    formatter <- if isNothing fmLookup
+                 then do
+                   putStrLn ("Unknown format '" ++ format ++ "', defaulting to 'raw'")
+                   return rawFormatter
+                 else return (fromJust fmLookup)
     let
-      formattedRecipes = map fm recipes
+      formattedRecipes = formatter recipes
     if output == "-"
-    then forM_ formattedRecipes putStrLn
-    else do
-      bracket
-       (openFile output WriteMode)
-       (hClose)
-       (\h -> forM_
-                formattedRecipes
-                (hPutStrLn h))
+    then C.putStrLn formattedRecipes
+    else C.writeFile output formattedRecipes
 
 
 main = do

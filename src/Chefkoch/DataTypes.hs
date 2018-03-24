@@ -1,4 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+
 module Chefkoch.DataTypes where
+
+
+import Data.Aeson
+import qualified Data.Text as T
 
 
 data Weekday = Monday
@@ -9,6 +16,10 @@ data Weekday = Monday
              | Saturday
              | Sunday
              deriving (Eq, Show)
+
+
+instance ToJSON Weekday where
+    toJSON = String . T.pack . show
 
 
 data Month = January
@@ -26,6 +37,10 @@ data Month = January
            deriving (Eq, Show)
 
 
+instance ToJSON Month where
+    toJSON = String . T.pack . show
+
+
 type Day = Int
 type Year = Int
 
@@ -40,3 +55,25 @@ data Recipe = Recipe
     , recipeIngredients :: [String]
     , recipeInstruction :: String
     } deriving (Eq, Show)
+
+
+instance ToJSON Recipe where
+    toJSON (Recipe
+              rDay
+              rWeekday
+              rMonth
+              rYear
+              rName
+              rUrl
+              rIngredients
+              rInstructions) = object [
+                "Day" .= rDay
+              , "Weekday" .= rWeekday
+              , "Month" .= rMonth
+              , "Year" .= rYear
+              , "Name" .= rName
+              , "Url" .= rUrl
+              , "Ingredients" .= rIngredients
+              , "Instructions" .= rInstructions
+              ]
+

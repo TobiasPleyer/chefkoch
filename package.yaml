@@ -20,6 +20,7 @@ description:         Please see the README on Github at <https://github.com/Tobi
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
 - text
 
 library:
@@ -30,12 +31,14 @@ library:
   - OverloadedStrings
   - RecordWildCards
   dependencies:
+  - aeson
   - array
   - HTTP
   - process
   - random
   - tagsoup
   - time
+  - yaml
 
 executables:
   chefkoch:

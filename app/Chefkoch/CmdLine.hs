@@ -15,7 +15,7 @@ data Options = Options
   , optionLinksOnly :: Bool
   , optionRandom :: Bool
   , optionOutput :: String
-  , optionsFormatter :: String
+  , optionsFormat :: String
   } deriving (Show)
 
 
@@ -55,10 +55,10 @@ chefkochOptions = Options
                <> value "recipe"
                <> help "The link (url) of the recipe to be downloaded")
          <*> strOption
-             ( long "formatter"
+             ( long "format"
              <> short 'f'
              <> value "raw"
-             <> help "Specify the formatter to be used for output. Supported values: raw, yaml")
+             <> help "Specify the format to be used for output. Supported values: raw, yaml")
 
 
 optionParser = info (chefkochOptions <**> helper)
