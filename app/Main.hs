@@ -1,6 +1,6 @@
 import Control.Monad
 import Control.Exception.Base (bracket)
-import qualified Data.ByteString.Lazy.Char8 as C
+import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromJust, isJust, isNothing)
 import Options.Applicative
 import System.IO (openFile, hPutStrLn, hClose, IOMode(..))
@@ -46,8 +46,8 @@ run (Options
     let
       formattedRecipes = formatter recipes
     if output == "-"
-    then C.putStrLn formattedRecipes
-    else C.writeFile output formattedRecipes
+    then BC.putStrLn formattedRecipes
+    else BC.writeFile output formattedRecipes
 
 
 main = do

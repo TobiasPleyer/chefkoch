@@ -57,7 +57,7 @@ chefkochOptions = Options
          <*> strOption
              ( long "format"
              <> short 'f'
-             <> value "raw"
+             <> value "yaml"
              <> help "Specify the format to be used for output. Supported values: raw, yaml")
 
 

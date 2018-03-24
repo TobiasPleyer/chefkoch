@@ -4,8 +4,10 @@
 module Chefkoch.Format where
 
 
-import qualified Data.ByteString.Lazy as B
-import qualified Data.ByteString.Lazy.Char8 as C
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy.Char8 as BLC
 import qualified Data.Aeson as Json
 import qualified Data.Yaml as Yaml
 
@@ -16,17 +18,17 @@ import Chefkoch.DataFunctions
 formatterMap = [
     ("raw" , rawFormatter )
   , ("json", jsonFormatter)
---  , ("yaml", yamlFormatter)
+  , ("yaml", yamlFormatter)
   ]
 
 
 rawFormatter :: [Recipe] -> B.ByteString
-rawFormatter = C.pack . show
+rawFormatter = BC.pack . show
 
 
 jsonFormatter :: [Recipe] -> B.ByteString
-jsonFormatter = Json.encode
+jsonFormatter = BL.toStrict . Json.encode
 
 
---yamlFormatter :: Recipe -> String
---yamlFormatter = Yaml.encode
+yamlFormatter :: [Recipe] -> B.ByteString
+yamlFormatter = Yaml.encode
