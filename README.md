@@ -1,6 +1,6 @@
 # chefkoch
 
-```bash
+```
 $ chefkoch --help
 chefkoch - a web crawler for the www.chefkoch.de cooking website
 
