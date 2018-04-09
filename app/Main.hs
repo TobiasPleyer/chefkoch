@@ -18,8 +18,8 @@ run (Options
        year
        monthInt
        day
-       link
-       linksOnly
+       url
+       urlsOnly
        random
        output
        format
@@ -29,13 +29,13 @@ run (Options
     recipes <- if random
                then do
                  (year,month,day) <- getRandomYearMonthDay
-                 wgetDownloadRecipesByDate linksOnly (Just year, Just month, Just day)
+                 wgetDownloadRecipesByDate urlsOnly (Just year, Just month, Just day)
                else
-                 if isJust link
+                 if isJust url
                  then do
-                   recipe <- wgetDownloadRecipeByLink (fromJust link)
+                   recipe <- wgetDownloadRecipeByUrl (fromJust url)
                    return [recipe]
-                 else wgetDownloadRecipesByDate linksOnly (year, month, day)
+                 else wgetDownloadRecipesByDate urlsOnly (year, month, day)
     let
       fmLookup = lookup format formatterMap
     formatter <- if isNothing fmLookup

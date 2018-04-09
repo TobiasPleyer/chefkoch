@@ -11,8 +11,8 @@ data Options = Options
   { optionYear :: Maybe Int
   , optionMonth :: Maybe Int
   , optionDay :: Maybe Int
-  , optionLink :: Maybe String
-  , optionLinksOnly :: Bool
+  , optionUrl :: Maybe String
+  , optionUrlsOnly :: Bool
   , optionRandom :: Bool
   , optionOutput :: String
   , optionsFormat :: String
@@ -37,13 +37,13 @@ chefkochOptions = Options
                <> metavar "DAY"
                <> help "The day the recipe was published"))
          <*> optional (strOption
-             ( long "link"
-               <> short 'l'
-               <> metavar "LINK"
-               <> help "The link (url) of the recipe to be downloaded"))
+             ( long "url"
+               <> short 'u'
+               <> metavar "URL"
+               <> help "The url of the recipe to be downloaded"))
          <*> switch
-             ( long "links-only"
-             <> help "Don't look for the ingredients and instructions, just for the links.")
+             ( long "urls-only"
+             <> help "Don't look for the ingredients and instructions, just for the urls.")
          <*> switch
              ( long "random"
              <> short 'r'
@@ -53,7 +53,7 @@ chefkochOptions = Options
                <> short 'o'
                <> metavar "FILE"
                <> value "recipe"
-               <> help "The link (url) of the recipe to be downloaded")
+               <> help "The name of the file to write the output to.")
          <*> strOption
              ( long "format"
              <> short 'f'

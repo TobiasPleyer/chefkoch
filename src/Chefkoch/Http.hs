@@ -95,8 +95,8 @@ downloadRecipesByDate grabber sparse (y,m,d) = do
                     . modifyRecipeIngredients ingr) recipe]
 
 
-downloadRecipeByLink :: (String -> IO T.Text) -> String -> IO Recipe
-downloadRecipeByLink grabber url = do
+downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO Recipe
+downloadRecipeByUrl grabber url = do
     recipePage <- grabber url
     let (ingr, inst) = parseRecipePage recipePage
     return emptyRecipe{ recipeUrl = url
@@ -118,6 +118,6 @@ wgetDownloadRecipesByDate = downloadRecipesByDate wgetURL
 openDownloadRecipesByDate = downloadRecipesByDate openURL
 fileDownloadRecipesByDate = downloadRecipesByDate fileURL
 
-wgetDownloadRecipeByLink = downloadRecipeByLink wgetURL
-openDownloadRecipeByLink = downloadRecipeByLink openURL
-fileDownloadRecipeByLink = downloadRecipeByLink fileURL
+wgetDownloadRecipeByUrl = downloadRecipeByUrl wgetURL
+openDownloadRecipeByUrl = downloadRecipeByUrl openURL
+fileDownloadRecipeByUrl = downloadRecipeByUrl fileURL
