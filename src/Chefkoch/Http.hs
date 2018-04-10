@@ -1,13 +1,12 @@
 module Chefkoch.Http where
 
 
-import Control.Monad
+import           Control.Concurrent.Async (mapConcurrently)
+import           Control.Monad
 import qualified Data.Text as T
-import Data.Maybe
-import Data.List
-import Network.HTTP
-import System.Process
-import System.IO
+import           Network.HTTP
+import           System.Process
+import           System.IO
 
 import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
@@ -44,7 +43,7 @@ downloadMonthlyRecipeListing grabber year month = do
 
 
 downloadRecipePage :: (String -> IO T.Text) -> Recipe -> IO T.Text
-downloadRecipePage grabber recipe = grabber (recipeUrl recipe)
+downloadRecipePage grabber = grabber . recipeUrl
 
 
 getRecipeIngredientsAndInstructions :: (String -> IO T.Text) -> Recipe -> IO ([String],String)
@@ -53,46 +52,28 @@ getRecipeIngredientsAndInstructions grabber recipe = do
   return $ parseRecipePage recipePage
 
 
-downloadRecipesByDate :: (String -> IO T.Text)
-                      -> Bool
-                      -> (Maybe Year, Maybe Month, Maybe Day)
+downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber to use for download
+                      -> Bool                                 -- ^ sparse or full download
+                      -> (Maybe Year, Maybe Month, Maybe Day) -- ^ date selection criteria
                       -> IO [Recipe]
-downloadRecipesByDate grabber sparse (y,m,d) = do
-    (currYear,currMonth,currDay) <- getCurrentYearMonthDay
-    let year = fromMaybe currYear y
-        month = fromMaybe currMonth m
+downloadRecipesByDate grabber sparse (my,mm,md) = do
+    (year,month) <- yearMonthFromMaybe (my,mm)
     monthlyListing <- downloadMonthlyRecipeListing grabber year month
     let
       partialRecipes = parseMonthlyRecipeListing monthlyListing
       recipes = (map ( modifyRecipeYear (Just year)
                      . modifyRecipeMonth (Just month))) partialRecipes
-    go sparse recipes d
-    where
-      go :: Bool -> [Recipe] -> Maybe Day -> IO [Recipe]
-      go sparse recipes Nothing = do
-        if sparse
-        then return recipes
-        else do
-          recipeDetails <- forM recipes (getRecipeIngredientsAndInstructions grabber)
-          forM (zip recipeDetails recipes) (\((ingr,inst),recipe)
-              -> ( return
-                 . modifyRecipeIngredients ingr
-                 . modifyRecipeInstruction inst) recipe)
-      go sparse recipes day = do
-        let
-          maybeRecipe = find (\r -> recipeDay r == day) recipes
-        if isNothing maybeRecipe
-        then
-          return []
-        else do
-          let
-            recipe = fromJust maybeRecipe
-          if sparse
-          then return [recipe]
-          else do
-            (ingr, inst) <- getRecipeIngredientsAndInstructions grabber recipe
-            return [( modifyRecipeInstruction inst
-                    . modifyRecipeIngredients ingr) recipe]
+      recipeSelection = selectRecipesByDay md recipes
+    if sparse
+    then
+      return recipeSelection
+    else do
+      recipeDetails <- downloadRecipesByUrl grabber (map recipeUrl recipeSelection)
+      forM (zip recipeDetails recipes)
+           (\(detail,recipe) ->
+             ( return
+             . modifyRecipeIngredients (recipeIngredients detail)
+             . modifyRecipeInstruction (recipeInstruction detail)) recipe)
 
 
 downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO Recipe
@@ -102,6 +83,12 @@ downloadRecipeByUrl grabber url = do
     return emptyRecipe{ recipeUrl = url
                       , recipeIngredients = ingr
                       , recipeInstruction = inst}
+
+
+downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Recipe]
+downloadRecipesByUrl grabber urls =
+  let download = downloadRecipeByUrl grabber
+  in mapConcurrently download urls
 
 
 -- Simple helpers
@@ -121,3 +108,7 @@ fileDownloadRecipesByDate = downloadRecipesByDate fileURL
 wgetDownloadRecipeByUrl = downloadRecipeByUrl wgetURL
 openDownloadRecipeByUrl = downloadRecipeByUrl openURL
 fileDownloadRecipeByUrl = downloadRecipeByUrl fileURL
+
+wgetDownloadRecipesByUrl = downloadRecipesByUrl wgetURL
+openDownloadRecipesByUrl = downloadRecipesByUrl openURL
+fileDownloadRecipesByUrl = downloadRecipesByUrl fileURL

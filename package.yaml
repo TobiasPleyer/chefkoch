@@ -33,6 +33,7 @@ library:
   dependencies:
   - aeson
   - array
+  - async
   - HTTP
   - process
   - random

@@ -1,9 +1,11 @@
 module Chefkoch.Util where
 
 
+import           Data.Maybe
+import           Data.List
 import qualified Data.Time.Clock as Time
 import qualified Data.Time.Calendar as Calendar
-import System.Random
+import           System.Random
 
 import Chefkoch.DataTypes
 import Chefkoch.DataFunctions
@@ -32,6 +34,26 @@ getRandomYearMonthDay = do
               then randomR (1,currDay) stdGen3
               else randomR (1,monthMaxDays month) stdGen3
   return (year, month, day)
+
+
+yearMonthFromMaybe :: (Maybe Year, Maybe Month) -> IO (Year, Month)
+yearMonthFromMaybe (my,mm) = do
+  (currYear,currMonth,currDay) <- getCurrentYearMonthDay
+  let
+    year = fromMaybe currYear my
+    month = fromMaybe currMonth mm
+  return (year,month)
+
+
+selectRecipesByDay :: Maybe Day -> [Recipe] -> [Recipe]
+selectRecipesByDay Nothing recipes = recipes
+selectRecipesByDay maybeDay recipes =
+  let maybeRecipe = find (\r -> recipeDay r == maybeDay) recipes
+  in
+    if isNothing maybeRecipe
+    then []
+    else [fromJust maybeRecipe]
+
 
 
 emptyRecipe = Recipe Nothing Nothing Nothing Nothing "" "" [] ""
