@@ -9,17 +9,15 @@ import Chefkoch.DataFunctions
 
 
 normalize :: [Tag T.Text] -> [Tag T.Text]
-normalize (x:xs) =
-  case x of
-    TagText t -> TagText (T.unwords (T.words t)) : normalize xs
-    _         -> x : normalize xs
-normalize [] = []
+normalize = map (fmap strip)
+  where
+    strip = T.unwords . T.words
 
 
 notEmptyText :: Tag T.Text -> Bool
 notEmptyText (TagText t)
-  | t == T.empty = False
-notEmptyText _   = True
+  | T.null t   = False
+notEmptyText _ = True
 
 
 subGroups :: Int -> [a] -> [[a]]
