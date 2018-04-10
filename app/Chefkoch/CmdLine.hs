@@ -43,7 +43,7 @@ chefkochOptions = Options
                <> help "The url of the recipe to be downloaded"))
          <*> switch
              ( long "urls-only"
-             <> help "Don't look for the ingredients and instructions, just for the urls.")
+             <> help "Don't look for the ingredients and instructions, just fetch the URLs belonging to the recipes.")
          <*> switch
              ( long "random"
              <> short 'r'
