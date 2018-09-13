@@ -46,12 +46,6 @@ downloadRecipePage :: (String -> IO T.Text) -> Recipe -> IO T.Text
 downloadRecipePage grabber = grabber . recipeUrl
 
 
-getRecipeIngredientsAndInstructions :: (String -> IO T.Text) -> Recipe -> IO ([String],String)
-getRecipeIngredientsAndInstructions grabber recipe = do
-  recipePage <- downloadRecipePage grabber recipe
-  return $ parseRecipePage recipePage
-
-
 downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber to use for download
                       -> Bool                                 -- ^ sparse or full download
                       -> (Maybe Year, Maybe Month, Maybe Day) -- ^ date selection criteria
