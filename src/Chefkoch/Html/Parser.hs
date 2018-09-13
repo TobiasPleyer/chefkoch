@@ -43,10 +43,14 @@ parseMonthlyRecipeListing =
       isNeeded _               = True
 
 
-parseRecipePage :: T.Text -> ([String], String)
-parseRecipePage website = (ingredients,instructions)
+parseRecipePage :: T.Text -> (String, [String], String)
+parseRecipePage website = (title,ingredients,instructions)
   where
     tags = parseTags website
+    title = ( T.unpack
+            . (fromAttrib (T.pack "content"))
+            . head
+            . dropWhile (~/= "<meta property=og:title>")) tags
     ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
                   . groupBy "tr"
                   . convertFraction
