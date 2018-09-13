@@ -15,7 +15,7 @@ data Options = Options
   , optionUrlsOnly :: Bool
   , optionRandom :: Bool
   , optionOutput :: String
-  , optionsFormat :: String
+  , optionFormat :: String
   } deriving (Show)
 
 
