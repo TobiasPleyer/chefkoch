@@ -52,7 +52,7 @@ chefkochOptions = Options
              ( long "output"
                <> short 'o'
                <> metavar "FILE"
-               <> value "recipe"
+               <> value "-"
                <> help "The name of the file to write the output to.")
          <*> strOption
              ( long "format"
