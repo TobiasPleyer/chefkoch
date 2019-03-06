@@ -2,9 +2,14 @@ module Chefkoch.Http where
 
 
 import           Control.Concurrent.Async (mapConcurrently)
+import           Control.Lens
 import           Control.Monad
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import           Network.HTTP
+import           Network.Wreq
 import           System.Process
 import           System.IO
 
@@ -25,6 +30,10 @@ wgetURL url = do
       wgetArgs = [url, "-qO-"]
     htmlString <- readProcess wgetPath wgetArgs ""
     return (T.pack htmlString)
+
+
+wreqURL :: String -> IO T.Text
+wreqURL url = (TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody) <$> get url
 
 
 fileURL :: String -> IO T.Text
@@ -55,8 +64,8 @@ downloadRecipesByDate grabber sparse (my,mm,md) = do
     monthlyListing <- downloadMonthlyRecipeListing grabber year month
     let
       partialRecipes = parseMonthlyRecipeListing monthlyListing
-      recipes = (map ( modifyRecipeYear (Just year)
-                     . modifyRecipeMonth (Just month))) partialRecipes
+      recipes = map ( modifyRecipeYear (Just year)
+                    . modifyRecipeMonth (Just month)) partialRecipes
       recipeSelection = selectRecipesByDay md recipes
     if sparse
     then
@@ -89,21 +98,26 @@ downloadRecipesByUrl grabber urls =
 -- Simple helpers
 
 wgetDownloadRecipePage = downloadRecipePage wgetURL
+wreqDownloadRecipePage = downloadRecipePage wreqURL
 openDownloadRecipePage = downloadRecipePage openURL
 fileDownloadRecipePage = downloadRecipePage fileURL
 
 wgetDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing wgetURL
+wreqDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing wreqURL
 openDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing openURL
 fileDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing fileURL
 
 wgetDownloadRecipesByDate = downloadRecipesByDate wgetURL
+wreqDownloadRecipesByDate = downloadRecipesByDate wreqURL
 openDownloadRecipesByDate = downloadRecipesByDate openURL
 fileDownloadRecipesByDate = downloadRecipesByDate fileURL
 
 wgetDownloadRecipeByUrl = downloadRecipeByUrl wgetURL
+wreqDownloadRecipeByUrl = downloadRecipeByUrl wreqURL
 openDownloadRecipeByUrl = downloadRecipeByUrl openURL
 fileDownloadRecipeByUrl = downloadRecipeByUrl fileURL
 
 wgetDownloadRecipesByUrl = downloadRecipesByUrl wgetURL
+wreqDownloadRecipesByUrl = downloadRecipesByUrl wreqURL
 openDownloadRecipesByUrl = downloadRecipesByUrl openURL
 fileDownloadRecipesByUrl = downloadRecipesByUrl fileURL

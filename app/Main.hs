@@ -19,13 +19,13 @@ run Options{..} = do
     recipes <- if optionRandom
                then do
                  (year,month,day) <- getRandomYearMonthDay
-                 wgetDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
+                 wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
                else
                  case optionUrl of
                  Just url -> do
-                   recipe <- wgetDownloadRecipeByUrl url
+                   recipe <- wreqDownloadRecipeByUrl url
                    return [recipe]
-                 Nothing -> wgetDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
+                 Nothing -> wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
     let maybeFormatter = lookup optionFormat formatterMap
     formatter <- case maybeFormatter of
                  Just fm -> return fm
