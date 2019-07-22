@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5c2f3b3296fb12ba85aaf42654b78189bd2ef81162408816910a8b3e55a1b278
+-- hash: 43525b74139b7b5e2300d54d91a751c94d3062fd9b6a1c3758d5efb6587e524e
 
 name:           chefkoch
 version:        1.1.1.0
@@ -35,9 +35,13 @@ library
     , async
     , base >=4.7 && <5
     , bytestring
+    , cmdargs
+    , containers
     , lens
+    , megaparsec
     , process
     , random
+    , rio
     , tagsoup
     , text
     , time
@@ -64,6 +68,7 @@ executable chefkoch
       base >=4.7 && <5
     , bytestring
     , chefkoch
+    , cmdargs
     , optparse-applicative
     , text
   other-modules:

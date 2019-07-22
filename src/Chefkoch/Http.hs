@@ -4,19 +4,19 @@ module Chefkoch.Http where
 import           Control.Concurrent.Async (mapConcurrently)
 import           Control.Lens
 import           Control.Monad
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TL
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as T
+import qualified Data.Text.Lazy           as TL
+import qualified Data.Text.Lazy.Encoding  as TL
 import           Network.HTTP
 import           Network.Wreq
-import           System.Process
 import           System.IO
+import           System.Process
 
-import Chefkoch.DataTypes
-import Chefkoch.DataFunctions
-import Chefkoch.Util
-import Chefkoch.Html.Parser
+import           Chefkoch.DataFunctions
+import           Chefkoch.DataTypes
+import           Chefkoch.Html.Parser
+import           Chefkoch.Util
 
 
 openURL :: String -> IO T.Text
@@ -44,10 +44,10 @@ fileURL f = do
 
 downloadMonthlyRecipeListing :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
 downloadMonthlyRecipeListing grabber year month = do
-    let url = ("https://www.chefkoch.de/rezept-des-tages.php?month="
+    let url = "https://www.chefkoch.de/rezept-des-tages.php?month="
                ++ show (month2Int month)
                ++ "&year="
-               ++ show year)
+               ++ show year
     grabber url
 
 

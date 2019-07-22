@@ -21,6 +21,7 @@ description:         Please see the README on Github at <https://github.com/Tobi
 dependencies:
 - base >= 4.7 && < 5
 - bytestring
+- cmdargs
 - text
 
 library:
@@ -34,10 +35,13 @@ library:
   - aeson
   - array
   - async
+  - containers
   - HTTP
   - lens
+  - megaparsec
   - process
   - random
+  - rio
   - tagsoup
   - time
   - wreq
@@ -52,5 +56,5 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - optparse-applicative
     - chefkoch
+    - optparse-applicative
