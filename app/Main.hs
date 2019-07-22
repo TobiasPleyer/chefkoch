@@ -15,6 +15,11 @@ import           Chefkoch.Format
 import           Chefkoch.Http
 import           Chefkoch.Util
 
+import           Chefkoch.Html.Parser
+import qualified Data.Text.IO                     as TIO
+import           Text.HTML.TagSoup
+import qualified Text.Megaparsec                  as M
+
 
 sayNormal = whenNormal . putStrLn
 sayLoud = whenLoud . putStrLn
@@ -56,6 +61,12 @@ run opts@Options{..} = do
     else BC.writeFile optionOutput formattedRecipes
 
 
+parser = M.many anyTag
+
+
 main = do
     options <- execParser optionParser
-    run options
+    --run options
+    text <- TIO.readFile "resources/test.html"
+    let tags = parseTags text
+    M.parseTest parser tags

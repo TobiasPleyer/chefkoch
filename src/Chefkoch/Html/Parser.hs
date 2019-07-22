@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
 
@@ -24,9 +25,10 @@ import           Chefkoch.DataTypes
 import           Chefkoch.Html.Util
 
 
-type TagStream = [Tag T.Text]
+type TagToken = Tag Text
+type TagStream = [TagToken]
 instance Stream TagStream where
-  type Token TagStream = Tag T.Text
+  type Token TagStream = TagToken
   type Tokens TagStream = TagStream
   tokenToChunk Proxy = pure
   tokensToChunk Proxy = id
@@ -55,7 +57,39 @@ instance Stream TagStream where
   reachOffsetNoLine o pst = undefined
 
 
-type Parser = Parsec Void Text
+type Parser = Parsec Void TagStream
+
+anyTag :: Parser TagToken
+anyTag = satisfy (const True)
+
+anyTagOpen :: Parser TagToken
+anyTagOpen = satisfy isTagOpen
+
+anyTagClose :: Parser TagToken
+anyTagClose = satisfy isTagClose
+
+anyTagText :: Parser TagToken
+anyTagText = satisfy isTagText
+
+anyTagWarning :: Parser TagToken
+anyTagWarning = satisfy isTagWarning
+
+anyTagPosition :: Parser TagToken
+anyTagPosition = satisfy isTagPosition
+
+anyTagComment :: Parser TagToken
+anyTagComment = satisfy isTagComment
+
+tagOpen :: Text -> Parser TagToken
+tagOpen s = satisfy (isTagOpenName s)
+
+tagClose :: Text -> Parser TagToken
+tagClose s = satisfy (isTagCloseName s)
+
+--insideTag :: TagToken -> Parser TagToken -> Parser TagToken
+--insideTag tok p = do
+--    satisfy (~== tok)
+--    return $ TagText ""
 
 
 extractRecipeTable = undefined
@@ -68,52 +102,54 @@ extractRecipeTable = undefined
 --                          return $ takeWhile (~/= TagClose "table") ts''
 
 
-parseMonthlyRecipeListing :: T.Text -> [Recipe]
-parseMonthlyRecipeListing =
-    map (mkPartialRecipe . map unTag)
-      . subGroups 4
-      . filter (\t -> notEmptyText t
-                   && isNeeded t)
-      . normalize
-      . extractRecipeTable
-      . parseTags
-    where
-      unTag :: Tag T.Text -> T.Text
-      unTag (TagText t)              = t
-      unTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
-      unTag _                        = T.empty
-
-      isNeeded :: Tag T.Text -> Bool
-      isNeeded (TagOpen  t _)
-        | t == T.pack "tr"   = False
-        | t == T.pack "td"   = False
-        | t == T.pack "span" = False
-      isNeeded (TagClose t)
-        | t == T.pack "tr"   = False
-        | t == T.pack "td"   = False
-        | t == T.pack "span" = False
-        | t == T.pack "a"    = False
-      isNeeded _             = True
-
-
-parseRecipePage :: T.Text -> (String, [String], String)
-parseRecipePage website = (title,ingredients,instructions)
-  where
-    tags = parseTags website
-    title = ( T.unpack
-            . fromAttrib (T.pack "content")
-            . head
-            . dropWhile (~/= "<meta property=og:title>")) tags
-    ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
-                  . groupBy "tr"
-                  . convertFraction
-                  . filter notEmptyText
-                  . normalize
-                  . takeWhile (~/= "</table>")
-                  . tail
-                  . dropWhile (~/= "<table class=incredients>")) tags
-    instructions = ( T.unpack
-                   . innerText
-                   . normalize
-                   . takeWhile (~/= "</div>")
-                   . dropWhile (~/= "<div id=rezept-zubereitung>")) tags
+parseMonthlyRecipeListing = undefined
+--parseMonthlyRecipeListing :: T.Text -> [Recipe]
+--parseMonthlyRecipeListing =
+--    map (mkPartialRecipe . map unTag)
+--      . subGroups 4
+--      . filter (\t -> notEmptyText t
+--                   && isNeeded t)
+--      . normalize
+--      . extractRecipeTable
+--      . parseTags
+--    where
+--      unTag :: Tag T.Text -> T.Text
+--      unTag (TagText t)              = t
+--      unTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
+--      unTag _                        = T.empty
+--
+--      isNeeded :: Tag T.Text -> Bool
+--      isNeeded (TagOpen  t _)
+--        | t == T.pack "tr"   = False
+--        | t == T.pack "td"   = False
+--        | t == T.pack "span" = False
+--      isNeeded (TagClose t)
+--        | t == T.pack "tr"   = False
+--        | t == T.pack "td"   = False
+--        | t == T.pack "span" = False
+--        | t == T.pack "a"    = False
+--      isNeeded _             = True
+--
+--
+parseRecipePage = undefined
+--parseRecipePage :: T.Text -> (String, [String], String)
+--parseRecipePage website = (title,ingredients,instructions)
+--  where
+--    tags = parseTags website
+--    title = ( T.unpack
+--            . fromAttrib (T.pack "content")
+--            . head
+--            . dropWhile (~/= "<meta property=og:title>")) tags
+--    ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
+--                  . groupBy "tr"
+--                  . convertFraction
+--                  . filter notEmptyText
+--                  . normalize
+--                  . takeWhile (~/= "</table>")
+--                  . tail
+--                  . dropWhile (~/= "<table class=incredients>")) tags
+--    instructions = ( T.unpack
+--                   . innerText
+--                   . normalize
+--                   . takeWhile (~/= "</div>")
+--                   . dropWhile (~/= "<div id=rezept-zubereitung>")) tags
