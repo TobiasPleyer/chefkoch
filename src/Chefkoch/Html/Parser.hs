@@ -59,6 +59,13 @@ instance Stream TagStream where
 
 type Parser = Parsec Void TagStream
 
+anyTagText :: Parser TagToken
+anyTagText = satisfy isTagText
+
+anyEmptyTagText :: Parser TagToken
+anyEmptyTagText = satisfy (\t -> isTagText t && isEmpty (fromTagText t))
+  where isEmpty = T.null . T.strip
+
 anyTag :: Parser TagToken
 anyTag = satisfy (const True)
 
@@ -67,9 +74,6 @@ anyTagOpen = satisfy isTagOpen
 
 anyTagClose :: Parser TagToken
 anyTagClose = satisfy isTagClose
-
-anyTagText :: Parser TagToken
-anyTagText = satisfy isTagText
 
 anyTagWarning :: Parser TagToken
 anyTagWarning = satisfy isTagWarning
@@ -85,6 +89,31 @@ tagOpen s = satisfy (isTagOpenName s)
 
 tagClose :: Text -> Parser TagToken
 tagClose s = satisfy (isTagCloseName s)
+
+
+anyTag_ :: Parser TagToken
+anyTag_ = anyTag <* optional anyEmptyTagText
+
+anyTagOpen_ :: Parser TagToken
+anyTagOpen_ = anyTagOpen <* optional anyEmptyTagText
+
+anyTagClose_ :: Parser TagToken
+anyTagClose_ = anyTagClose <* optional anyEmptyTagText
+
+anyTagWarning_ :: Parser TagToken
+anyTagWarning_ = anyTagWarning <* optional anyEmptyTagText
+
+anyTagPosition_ :: Parser TagToken
+anyTagPosition_ = anyTagPosition <* optional anyEmptyTagText
+
+anyTagComment_ :: Parser TagToken
+anyTagComment_ = anyTagComment <* optional anyEmptyTagText
+
+tagOpen_ :: Text -> Parser TagToken
+tagOpen_ s = tagOpen s <* optional anyEmptyTagText
+
+tagClose_ :: Text -> Parser TagToken
+tagClose_ s = tagClose s <* optional anyEmptyTagText
 
 --insideTag :: TagToken -> Parser TagToken -> Parser TagToken
 --insideTag tok p = do

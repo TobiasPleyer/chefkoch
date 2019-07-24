@@ -1,4 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+
 import           Control.Exception.Base           (bracket)
 import           Control.Monad
 import qualified Data.ByteString.Char8            as BC
@@ -61,7 +63,33 @@ run opts@Options{..} = do
     else BC.writeFile optionOutput formattedRecipes
 
 
-parser = M.many anyTag
+section str = do
+    tagOpen str
+    findEndTag 0
+    where findEndTag n = do
+            t <- anyTag
+            if t ~== TagClose str
+            then if n == 0
+                 then return ()
+                 else findEndTag (n-1)
+            else if t ~== TagOpen str []
+                 then findEndTag (n+1)
+                 else findEndTag n
+
+
+parser = do
+    tagOpen_ "div"
+    tagOpen_ "div"
+    tagOpen_ "div"
+    tagOpen_ "ul"
+    txts <- M.many $ do
+             tagOpen_ "li"
+             section "span"
+             txt <- fromTagText <$> anyTagText
+             tagClose_ "li"
+             return txt
+    M.many anyTag
+    return txts
 
 
 main = do
