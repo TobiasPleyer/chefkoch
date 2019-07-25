@@ -17,6 +17,7 @@ import           Chefkoch.Format
 import           Chefkoch.Http
 import           Chefkoch.Util
 
+import           Chefkoch.Html.Megaparsec
 import           Chefkoch.Html.Parser
 import qualified Data.Text.IO                     as TIO
 import           Text.HTML.TagSoup
@@ -61,35 +62,6 @@ run opts@Options{..} = do
     if optionOutput == "-"
     then BC.putStrLn formattedRecipes
     else BC.writeFile optionOutput formattedRecipes
-
-
-section str = do
-    tagOpen str
-    findEndTag 0
-    where findEndTag n = do
-            t <- anyTag
-            if t ~== TagClose str
-            then if n == 0
-                 then return ()
-                 else findEndTag (n-1)
-            else if t ~== TagOpen str []
-                 then findEndTag (n+1)
-                 else findEndTag n
-
-
-parser = do
-    tagOpen_ "div"
-    tagOpen_ "div"
-    tagOpen_ "div"
-    tagOpen_ "ul"
-    txts <- M.many $ do
-             tagOpen_ "li"
-             section "span"
-             txt <- fromTagText <$> anyTagText
-             tagClose_ "li"
-             return txt
-    M.many anyTag
-    return txts
 
 
 main = do
