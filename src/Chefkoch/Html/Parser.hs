@@ -25,19 +25,21 @@ import           Chefkoch.Html.Megaparsec
 import           Chefkoch.Html.Util
 
 
-parser = do
-    tagOpen "div"
-    tagOpen "div"
-    tagOpen "div"
-    tagOpen "ul"
-    txts <- M.many $ do
-             tagOpen "li"
-             section_ "span"
-             txt <- fromTagText <$> anyTagText
-             tagClose "li"
-             return txt
-    M.many anyTag
-    return txts
+test_parser =
+    inside "div" $ do
+        txts <- inside "div" $
+            inside "div" $
+                inside "ul" $
+                    M.many $ do
+                      tagOpen "li"
+                      section_ "span"
+                      txt <- (T.strip . fromTagText) <$> anyTagText
+                      tagClose "li"
+                      return txt
+        hints <- inside "div" $
+            inside "ul" $
+                M.many $ inside "li" $ fromTagText <$> anyTagText
+        return (txts, hints)
 
 
 extractRecipeTable = undefined

@@ -53,10 +53,6 @@ type Parser = Parsec Void TagStream
 anyTagText :: Parser TagToken
 anyTagText = satisfy isTagText
 
-anyEmptyTagText :: Parser TagToken
-anyEmptyTagText = satisfy (\t -> isTagText t && isEmpty (fromTagText t))
-  where isEmpty = T.null . T.strip
-
 anyTag_ :: Parser TagToken
 anyTag_ = satisfy (const True)
 anyTagOpen_ :: Parser TagToken
@@ -75,40 +71,46 @@ tagClose_ :: Text -> Parser TagToken
 tagClose_ s = satisfy (isTagCloseName s)
 
 
+anyEmptyTagText :: Parser TagToken
+anyEmptyTagText = satisfy (\t -> isTagText t && isEmpty (fromTagText t))
+  where isEmpty = T.null . T.strip
+
+consumeEmptyTags = optional (many (anyEmptyTagText <|> anyTagComment))
+
+
 anyTag :: Parser TagToken
-anyTag = anyTag_ <* optional anyEmptyTagText
+anyTag = anyTag_ <* consumeEmptyTags
 anyTagOpen :: Parser TagToken
-anyTagOpen = anyTagOpen_ <* optional anyEmptyTagText
+anyTagOpen = anyTagOpen_ <* consumeEmptyTags
 anyTagClose :: Parser TagToken
-anyTagClose = anyTagClose_ <* optional anyEmptyTagText
+anyTagClose = anyTagClose_ <* consumeEmptyTags
 anyTagWarning :: Parser TagToken
-anyTagWarning = anyTagWarning_ <* optional anyEmptyTagText
+anyTagWarning = anyTagWarning_ <* consumeEmptyTags
 anyTagPosition :: Parser TagToken
-anyTagPosition = anyTagPosition_ <* optional anyEmptyTagText
+anyTagPosition = anyTagPosition_ <* consumeEmptyTags
 anyTagComment :: Parser TagToken
-anyTagComment = anyTagComment_ <* optional anyEmptyTagText
+anyTagComment = anyTagComment_ <* consumeEmptyTags
 tagOpen :: Text -> Parser TagToken
-tagOpen s = tagOpen_ s <* optional anyEmptyTagText
+tagOpen s = tagOpen_ s <* consumeEmptyTags
 tagClose :: Text -> Parser TagToken
-tagClose s = tagClose_ s <* optional anyEmptyTagText
-
---insideTag :: TagToken -> Parser TagToken -> Parser TagToken
---insideTag tok p = do
---    satisfy (~== tok)
---    return $ TagText ""
+tagClose s = tagClose_ s <* consumeEmptyTags
 
 
-section str = do
-    tagOpen str
-    findEndTag 0
-    where findEndTag n = do
-            t <- anyTag
-            if t ~== TagClose str
-            then if n == 0
-                 then return ()
-                 else findEndTag (n-1)
-            else if t ~== TagOpen str []
-                 then findEndTag (n+1)
-                 else findEndTag n
+findEndTag str = go 0
+  where go n = anyTag >>= choose n
+        choose n t
+          | t ~== TagClose str && n == 0 = return ()
+          | t ~== TagClose str && n /= 0 = go (n-1)
+          | t ~== TagOpen str [] = go (n+1)
+          | otherwise = go n
 
+
+inside str p = do
+  tagOpen str
+  r <- p
+  findEndTag str
+  return r
+
+
+section str = inside str (pure ())
 section_ str = section str <* optional anyEmptyTagText

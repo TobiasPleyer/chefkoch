@@ -69,4 +69,9 @@ main = do
     --run options
     text <- TIO.readFile "resources/test.html"
     let tags = parseTags text
-    M.parseTest parser tags
+        p_res = M.parse test_parser "" tags
+    case p_res of
+      Left bundle -> putStrLn (M.errorBundlePretty bundle)
+      Right (a,b) -> do
+        forM_ a TIO.putStrLn
+        forM_ b TIO.putStrLn
