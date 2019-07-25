@@ -26,15 +26,15 @@ import           Chefkoch.Html.Util
 
 
 parser = do
-    tagOpen_ "div"
-    tagOpen_ "div"
-    tagOpen_ "div"
-    tagOpen_ "ul"
+    tagOpen "div"
+    tagOpen "div"
+    tagOpen "div"
+    tagOpen "ul"
     txts <- M.many $ do
-             tagOpen_ "li"
-             section "span"
+             tagOpen "li"
+             section_ "span"
              txt <- fromTagText <$> anyTagText
-             tagClose_ "li"
+             tagClose "li"
              return txt
     M.many anyTag
     return txts

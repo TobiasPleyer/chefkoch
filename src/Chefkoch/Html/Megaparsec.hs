@@ -57,40 +57,40 @@ anyEmptyTagText :: Parser TagToken
 anyEmptyTagText = satisfy (\t -> isTagText t && isEmpty (fromTagText t))
   where isEmpty = T.null . T.strip
 
-anyTag :: Parser TagToken
-anyTag = satisfy (const True)
-anyTagOpen :: Parser TagToken
-anyTagOpen = satisfy isTagOpen
-anyTagClose :: Parser TagToken
-anyTagClose = satisfy isTagClose
-anyTagWarning :: Parser TagToken
-anyTagWarning = satisfy isTagWarning
-anyTagPosition :: Parser TagToken
-anyTagPosition = satisfy isTagPosition
-anyTagComment :: Parser TagToken
-anyTagComment = satisfy isTagComment
-tagOpen :: Text -> Parser TagToken
-tagOpen s = satisfy (isTagOpenName s)
-tagClose :: Text -> Parser TagToken
-tagClose s = satisfy (isTagCloseName s)
-
-
 anyTag_ :: Parser TagToken
-anyTag_ = anyTag <* optional anyEmptyTagText
+anyTag_ = satisfy (const True)
 anyTagOpen_ :: Parser TagToken
-anyTagOpen_ = anyTagOpen <* optional anyEmptyTagText
+anyTagOpen_ = satisfy isTagOpen
 anyTagClose_ :: Parser TagToken
-anyTagClose_ = anyTagClose <* optional anyEmptyTagText
+anyTagClose_ = satisfy isTagClose
 anyTagWarning_ :: Parser TagToken
-anyTagWarning_ = anyTagWarning <* optional anyEmptyTagText
+anyTagWarning_ = satisfy isTagWarning
 anyTagPosition_ :: Parser TagToken
-anyTagPosition_ = anyTagPosition <* optional anyEmptyTagText
+anyTagPosition_ = satisfy isTagPosition
 anyTagComment_ :: Parser TagToken
-anyTagComment_ = anyTagComment <* optional anyEmptyTagText
+anyTagComment_ = satisfy isTagComment
 tagOpen_ :: Text -> Parser TagToken
-tagOpen_ s = tagOpen s <* optional anyEmptyTagText
+tagOpen_ s = satisfy (isTagOpenName s)
 tagClose_ :: Text -> Parser TagToken
-tagClose_ s = tagClose s <* optional anyEmptyTagText
+tagClose_ s = satisfy (isTagCloseName s)
+
+
+anyTag :: Parser TagToken
+anyTag = anyTag_ <* optional anyEmptyTagText
+anyTagOpen :: Parser TagToken
+anyTagOpen = anyTagOpen_ <* optional anyEmptyTagText
+anyTagClose :: Parser TagToken
+anyTagClose = anyTagClose_ <* optional anyEmptyTagText
+anyTagWarning :: Parser TagToken
+anyTagWarning = anyTagWarning_ <* optional anyEmptyTagText
+anyTagPosition :: Parser TagToken
+anyTagPosition = anyTagPosition_ <* optional anyEmptyTagText
+anyTagComment :: Parser TagToken
+anyTagComment = anyTagComment_ <* optional anyEmptyTagText
+tagOpen :: Text -> Parser TagToken
+tagOpen s = tagOpen_ s <* optional anyEmptyTagText
+tagClose :: Text -> Parser TagToken
+tagClose s = tagClose_ s <* optional anyEmptyTagText
 
 --insideTag :: TagToken -> Parser TagToken -> Parser TagToken
 --insideTag tok p = do
@@ -110,3 +110,5 @@ section str = do
             else if t ~== TagOpen str []
                  then findEndTag (n+1)
                  else findEndTag n
+
+section_ str = section str <* optional anyEmptyTagText
