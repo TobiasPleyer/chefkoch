@@ -4,6 +4,8 @@
 import           Control.Exception.Base           (bracket)
 import           Control.Monad
 import qualified Data.ByteString.Char8            as BC
+import           Data.Either                      (partitionEithers)
+import           Data.List                        (partition)
 import qualified Data.Text.IO                     as TIO
 import           Debug.Trace
 import           Options.Applicative
@@ -33,7 +35,7 @@ run opts@Options{..} = do
     sayLoud $ "Options: " ++ show opts
     let month = fmap unsafeInt2Month optionMonth
     sayLoud $ "Month: " ++ show month
-    recipes <- if optionRandom
+    eRecipes <- if optionRandom
                then do
                  sayLoud "Choosing at random..."
                  (year,month,day) <- getRandomYearMonthDay
@@ -43,23 +45,31 @@ run opts@Options{..} = do
                  Just url -> do
                    sayLoud $ "Using URL: " ++ url
                    recipe <- wreqDownloadRecipeByUrl url
-                   return [recipe]
+                   return $ Right [recipe]
                  Nothing -> do
                    sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
                    wgetDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
-    sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
-    sayLoud $ show recipes
-    let maybeFormatter = lookup optionFormat formatterMap
-    formatter <- case maybeFormatter of
-                 Just fm -> return fm
-                 Nothing -> do
-                   putStrLn ("Unknown format '" ++ optionFormat ++ "', defaulting to 'raw'")
-                   return rawFormatter
-    let
-      formattedRecipes = formatter recipes
-    if optionOutput == "-"
-    then BC.putStrLn formattedRecipes
-    else BC.writeFile optionOutput formattedRecipes
+    case eRecipes of
+      Left err -> do
+        putStrLn "Error! Unable to continue"
+        putStrLn err
+      Right recipes -> do
+        sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
+        sayLoud $ show recipes
+        let maybeFormatter = lookup optionFormat formatterMap
+        formatter <- case maybeFormatter of
+                     Just fm -> return fm
+                     Nothing -> do
+                       putStrLn ("Unknown format '" ++ optionFormat ++ "', defaulting to 'raw'")
+                       return rawFormatter
+        let (nok, ok) = partitionEithers recipes
+        unless (null nok) $ do
+            putStrLn "The following errors occurred while parsing the recipes:"
+            forM_ nok putStrLn
+        let formattedRecipes = formatter ok
+        if optionOutput == "-"
+        then BC.putStrLn formattedRecipes
+        else BC.writeFile optionOutput formattedRecipes
 
 
 main = do

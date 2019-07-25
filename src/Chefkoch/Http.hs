@@ -58,38 +58,48 @@ downloadRecipePage grabber = grabber . recipeUrl
 downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber to use for download
                       -> Bool                                 -- ^ sparse or full download
                       -> (Maybe Year, Maybe Month, Maybe Day) -- ^ date selection criteria
-                      -> IO [Recipe]
+                      -> IO (Either String [Either String Recipe])
 downloadRecipesByDate grabber sparse (my,mm,md) = do
     (year,month) <- yearMonthFromMaybe (my,mm)
     monthlyListing <- downloadMonthlyRecipeListing grabber year month
-    let
-      partialRecipes = parseMonthlyRecipeListing monthlyListing
-      recipes = map ( modifyRecipeYear (Just year)
-                    . modifyRecipeMonth (Just month)) partialRecipes
-      recipeSelection = selectRecipesByDay md recipes
-    if sparse
-    then
-      return recipeSelection
-    else do
-      recipeDetails <- downloadRecipesByUrl grabber (map recipeUrl recipeSelection)
-      forM (zip recipeDetails recipes)
-           (\(detail,recipe) ->
-             ( return
-             . modifyRecipeIngredients (recipeIngredients detail)
-             . modifyRecipeInstruction (recipeInstruction detail)) recipe)
+    let partialRecipesParseResult = parseMonthlyRecipeListing monthlyListing
+    case partialRecipesParseResult of
+      Left err -> return $ Left err
+      Right partialRecipes -> do
+        let
+          recipes = map ( modifyRecipeYear (Just year)
+                        . modifyRecipeMonth (Just month)) partialRecipes
+          recipeSelection = selectRecipesByDay md recipes
+        if sparse
+        then
+          return $ Right $ map Right recipeSelection
+        else do
+          recipeDetails <- downloadRecipesByUrl grabber (map recipeUrl recipeSelection)
+          updatedRecipes <- forM (zip recipeDetails recipes)
+               (\(detail,recipe) ->
+                 case detail of
+                   Left err -> return $ Left err
+                   Right detail' ->
+                     ( return . Right
+                     . modifyRecipeIngredients (recipeIngredients detail')
+                     . modifyRecipeInstruction (recipeInstruction detail')) recipe)
+          return $ Right updatedRecipes
 
 
-downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO Recipe
+downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO (Either String Recipe)
 downloadRecipeByUrl grabber url = do
     recipePage <- grabber url
-    let (title, ingr, inst) = parseRecipePage recipePage
-    return emptyRecipe{ recipeUrl = url
-                      , recipeName = title
-                      , recipeIngredients = ingr
-                      , recipeInstruction = inst}
+    let parseRecipePageParseResult = parseRecipePage recipePage
+    case parseRecipePageParseResult of
+      Left err -> return $ Left err
+      Right (title, ingr, inst) ->
+        return $ Right emptyRecipe{ recipeUrl = url
+                                  , recipeName = title
+                                  , recipeIngredients = ingr
+                                  , recipeInstruction = inst}
 
 
-downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Recipe]
+downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Either String Recipe]
 downloadRecipesByUrl grabber urls =
   let download = downloadRecipeByUrl grabber
   in mapConcurrently download urls

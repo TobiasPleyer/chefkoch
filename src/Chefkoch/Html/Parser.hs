@@ -8,7 +8,8 @@ module Chefkoch.Html.Parser where
 
 import           Data.Text                (Text)
 import qualified Data.Text                as T
-import           Text.HTML.TagSoup        (fromTagText)
+import           Data.Void                (Void (..))
+import qualified Text.HTML.TagSoup        as TS
 import qualified Text.Megaparsec          as M
 
 import           Chefkoch.DataTypes
@@ -24,12 +25,12 @@ test_parser =
                     M.many $ do
                       tagOpen "li"
                       section_ "span"
-                      txt <- (T.strip . fromTagText) <$> anyTagText
+                      txt <- (T.strip . TS.fromTagText) <$> anyTagText
                       tagClose "li"
                       return txt
         hints <- inside "div" $
             inside "ul" $
-                M.many $ inside "li" $ fromTagText <$> anyTagText
+                M.many $ inside "li" $ TS.fromTagText <$> anyTagText
         return (txts, hints)
 
 
@@ -41,11 +42,17 @@ extractRecipeTable = undefined
 --                                    Nothing -> Left "Error extracting recipe table, couldn't find the start of the table"
 --                                    Just ts''' -> Right ts'''
 --                          return $ takeWhile (~/= TagClose "table") ts''
+--
+returnParseResult :: M.Stream s => Either (M.ParseErrorBundle s Void) a -> Either String a
+returnParseResult res = case res of
+  Left err -> Left $ M.errorBundlePretty err
+  Right ok -> Right ok
 
 
-parseMonthlyRecipeListing = undefined
---parseMonthlyRecipeListing :: T.Text -> [Recipe]
---parseMonthlyRecipeListing =
+parseMonthlyRecipeListing :: T.Text -> Either String [Recipe]
+parseMonthlyRecipeListing = returnParseResult . M.parse monthlyListingParser "" . TS.parseTags
+  where
+    monthlyListingParser = undefined
 --    map (mkPartialRecipe . map unTag)
 --      . subGroups 4
 --      . filter (\t -> notEmptyText t
@@ -72,9 +79,10 @@ parseMonthlyRecipeListing = undefined
 --      isNeeded _             = True
 --
 --
-parseRecipePage = undefined
---parseRecipePage :: T.Text -> (String, [String], String)
---parseRecipePage website = (title,ingredients,instructions)
+parseRecipePage :: T.Text -> Either String (String, [String], String)
+parseRecipePage = returnParseResult . M.parse recipePageParser "" . TS.parseTags
+  where
+    recipePageParser = undefined
 --  where
 --    tags = parseTags website
 --    title = ( T.unpack
