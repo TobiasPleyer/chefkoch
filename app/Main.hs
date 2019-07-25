@@ -4,24 +4,22 @@
 import           Control.Exception.Base           (bracket)
 import           Control.Monad
 import qualified Data.ByteString.Char8            as BC
+import qualified Data.Text.IO                     as TIO
 import           Debug.Trace
 import           Options.Applicative
 import           System.Console.CmdArgs.Verbosity
 import           System.IO                        (IOMode (..), hClose,
                                                    hPutStrLn, openFile)
+import           Text.HTML.TagSoup
+import qualified Text.Megaparsec                  as M
 
 import           Chefkoch.CmdLine
 import           Chefkoch.DataFunctions
-import           Chefkoch.DataTypes
 import           Chefkoch.Format
-import           Chefkoch.Http
-import           Chefkoch.Util
-
 import           Chefkoch.Html.Megaparsec
 import           Chefkoch.Html.Parser
-import qualified Data.Text.IO                     as TIO
-import           Text.HTML.TagSoup
-import qualified Text.Megaparsec                  as M
+import           Chefkoch.Http
+import           Chefkoch.Util
 
 
 sayNormal = whenNormal . putStrLn

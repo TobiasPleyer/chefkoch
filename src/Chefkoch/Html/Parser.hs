@@ -6,18 +6,9 @@
 module Chefkoch.Html.Parser where
 
 
-import           Data.Char                (isSpace)
-import           Data.Either
-import           Data.List.NonEmpty       (NonEmpty (..))
-import qualified Data.List.NonEmpty       as NE
-import           Data.Proxy
-import           Data.Semigroup           ((<>))
-import qualified Data.Set                 as Set
 import           Data.Text                (Text)
 import qualified Data.Text                as T
-import           Data.Void                (Void (..))
-import           RIO.List                 (headMaybe)
-import           Text.HTML.TagSoup
+import           Text.HTML.TagSoup        (fromTagText)
 import qualified Text.Megaparsec          as M
 
 import           Chefkoch.DataTypes
