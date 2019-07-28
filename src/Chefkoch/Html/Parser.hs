@@ -6,99 +6,99 @@
 module Chefkoch.Html.Parser where
 
 
+import           Data.Char                (isSpace)
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Data.Void                (Void (..))
+import           Text.HTML.TagSoup        ((~/=), (~==))
 import qualified Text.HTML.TagSoup        as TS
 import qualified Text.Megaparsec          as M
+import           Text.Megaparsec.Debug    (dbg)
 
+import           Chefkoch.DataFunctions
 import           Chefkoch.DataTypes
 import           Chefkoch.Html.Megaparsec
 import           Chefkoch.Html.Util
 
 
-test_parser =
-    inside "div" $ do
-        txts <- inside "div" $
-            inside "div" $
-                inside "ul" $
-                    M.many $ do
-                      tagOpen "li"
-                      section_ "span"
-                      txt <- (T.strip . TS.fromTagText) <$> anyTagText
-                      tagClose "li"
-                      return txt
-        hints <- inside "div" $
-            inside "ul" $
-                M.many $ inside "li" $ TS.fromTagText <$> anyTagText
-        return (txts, hints)
-
-
-extractRecipeTable = undefined
--- extractRecipeTable :: [Tag T.Text] -> Either Error [Tag T.Text]
---extractRecipeTable ts = do
---                          ts' <- pure $ dropWhile (~/= TagOpen "table" [("class", "table-day")]) ts
---                          ts'' <- case L.tailMaybe ts' of
---                                    Nothing -> Left "Error extracting recipe table, couldn't find the start of the table"
---                                    Just ts''' -> Right ts'''
---                          return $ takeWhile (~/= TagClose "table") ts''
---
-returnParseResult :: M.Stream s => Either (M.ParseErrorBundle s Void) a -> Either String a
-returnParseResult res = case res of
-  Left err -> Left $ M.errorBundlePretty err
-  Right ok -> Right ok
-
-
 parseMonthlyRecipeListing :: T.Text -> Either String [Recipe]
-parseMonthlyRecipeListing = returnParseResult . M.parse monthlyListingParser "" . TS.parseTags
+parseMonthlyRecipeListing = returnParseResult . M.parse pMonthlyListing "" . TS.parseTags
   where
-    monthlyListingParser = undefined
---    map (mkPartialRecipe . map unTag)
---      . subGroups 4
---      . filter (\t -> notEmptyText t
---                   && isNeeded t)
---      . normalize
---      . extractRecipeTable
---      . parseTags
---    where
---      unTag :: Tag T.Text -> T.Text
---      unTag (TagText t)              = t
---      unTag tag@(TagOpen aTag attrs) = fromAttrib (T.pack "href") tag
---      unTag _                        = T.empty
---
---      isNeeded :: Tag T.Text -> Bool
---      isNeeded (TagOpen  t _)
---        | t == T.pack "tr"   = False
---        | t == T.pack "td"   = False
---        | t == T.pack "span" = False
---      isNeeded (TagClose t)
---        | t == T.pack "tr"   = False
---        | t == T.pack "td"   = False
---        | t == T.pack "span" = False
---        | t == T.pack "a"    = False
---      isNeeded _             = True
---
---
+    pMonthlyListing :: Parser [Recipe]
+    pMonthlyListing = do
+      M.skipManyTill anyTag pRecipeTableStart
+      rows <- M.many pRecipeTableRow
+      tagClose "table"
+      return $ map mkPartialRecipe rows
+
+    pRecipeTableStart :: Parser TagToken
+    pRecipeTableStart = tagOpenAttrNameLit "table" "class" (== "table-day")
+
+    pRecipeTableRow :: Parser (Maybe Day, Maybe Weekday, String, String)
+    pRecipeTableRow =
+      inside "tr" $ do
+        (day, weekday) <- inside "td" $ do
+          day <- read . T.unpack . T.init . T.filter (not . isSpace) <$> getText
+          weekday <- inside "span" $ str2Weekday . T.unpack . T.filter (not . isSpace) <$> getText
+          case weekday of
+            Just weekday' -> return (Just day, Just weekday')
+            Nothing       -> fail "Unable to parse day and weekday"
+        (url, name) <- inside "td" $ do
+          url <- TS.fromAttrib "href" <$> tagOpen "a"
+          name <- getText
+          tagClose "a"
+          return (T.unpack url, T.unpack name)
+        return (day, weekday, url, name)
+
+
 parseRecipePage :: T.Text -> Either String (String, [String], String)
-parseRecipePage = returnParseResult . M.parse recipePageParser "" . TS.parseTags
+parseRecipePage = returnParseResult . M.parse pRecipePage "" . TS.parseTags
   where
-    recipePageParser = undefined
---  where
---    tags = parseTags website
---    title = ( T.unpack
---            . fromAttrib (T.pack "content")
---            . head
---            . dropWhile (~/= "<meta property=og:title>")) tags
---    ingredients = ( map (T.unpack . T.unwords . map fromTagText . filter isTagText)
---                  . groupBy "tr"
---                  . convertFraction
---                  . filter notEmptyText
---                  . normalize
---                  . takeWhile (~/= "</table>")
---                  . tail
---                  . dropWhile (~/= "<table class=incredients>")) tags
---    instructions = ( T.unpack
---                   . innerText
---                   . normalize
---                   . takeWhile (~/= "</div>")
---                   . dropWhile (~/= "<div id=rezept-zubereitung>")) tags
+    pRecipePage = do
+      dbg "Skipping to title start" $ M.skipManyTill anyTag pRecipeTitle
+      title <- dbg "title" getString
+      dbg "Skipping to ingredient table start" $ M.skipManyTill anyTag pIngredientTableStart
+      rows <- dbg "Ingredients" $ M.many (T.unpack <$> pIngredientTableRow)
+      tagClose "table"
+      dbg "Skipping to instructions start" $ M.skipManyTill anyTag pInstructionsStart
+      instructions <- dbg "instructions" $ T.unpack . T.unlines <$> M.sepBy1 getText (M.optional (M.many (section "br")))
+      tagClose "div"
+      return (title,rows,instructions)
+
+    pRecipeTitle :: Parser TagToken
+    pRecipeTitle = tagOpenAttrNameLit "h1" "class" (== "page-title")
+
+    pIngredientTableStart :: Parser TagToken
+    pIngredientTableStart = tagOpenAttrNameLit "table" "class" (== "incredients")
+
+    pIngredientTableRow :: Parser Text
+    pIngredientTableRow = do
+      let pSpecials = M.many (M.choice [tagOpen_ "sup", tagClose_ "sup", tagOpen_ "sub", tagClose_ "sub"])
+      inside "tr" $ do
+        quantity <- inside "td" getAllText
+        ingredient <- dbg "Ingredient" $ inside "td" $ do
+          dbg "Maybe <a>" $ M.optional $ tagOpen "a"
+          ingredient <- dbg "Inner Ingredient" getAllText
+          dbg "Maybe </a>" $ M.optional $ tagClose "a"
+          return ingredient
+        return $ if T.null quantity
+                 then ingredient
+                 else quantity <> " " <> ingredient
+
+    pInstructionsStart :: Parser TagToken
+    pInstructionsStart = tagOpenAttrNameLit "div" "id" (== "rezept-zubereitung")
+
+    getAllText :: Parser Text
+    getAllText = go ""
+      where go t = next t M.<|> return t
+
+            next t = do
+              tag <- M.satisfy textRelated
+              if TS.isTagText tag
+              then go (t <> T.strip (TS.fromTagText tag))
+              else go t
+
+            textRelated (TS.TagComment _) = True
+            textRelated (TS.TagText _)    = True
+            textRelated (TS.TagOpen t _)  = t `elem` ["sup", "sub", "b", "i"]
+            textRelated (TS.TagClose t)   = t `elem` ["sup", "sub", "b", "i"]

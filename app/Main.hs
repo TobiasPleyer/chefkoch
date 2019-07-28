@@ -24,10 +24,6 @@ import           Chefkoch.Http
 import           Chefkoch.Util
 
 
-sayNormal = whenNormal . putStrLn
-sayLoud = whenLoud . putStrLn
-
-
 run :: Options -> IO ()
 run opts@Options{..} = do
     setVerbosity Loud
@@ -48,14 +44,13 @@ run opts@Options{..} = do
                    return $ Right [recipe]
                  Nothing -> do
                    sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
-                   wgetDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
+                   wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
     case eRecipes of
       Left err -> do
         putStrLn "Error! Unable to continue"
         putStrLn err
       Right recipes -> do
         sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
-        sayLoud $ show recipes
         let maybeFormatter = lookup optionFormat formatterMap
         formatter <- case maybeFormatter of
                      Just fm -> return fm
@@ -74,12 +69,4 @@ run opts@Options{..} = do
 
 main = do
     options <- execParser optionParser
-    --run options
-    text <- TIO.readFile "resources/test.html"
-    let tags = parseTags text
-        p_res = M.parse test_parser "" tags
-    case p_res of
-      Left bundle -> putStrLn (M.errorBundlePretty bundle)
-      Right (a,b) -> do
-        forM_ a TIO.putStrLn
-        forM_ b TIO.putStrLn
+    run options

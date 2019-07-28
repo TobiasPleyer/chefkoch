@@ -1,14 +1,19 @@
 module Chefkoch.Util where
 
 
-import           Data.Maybe
 import           Data.List
-import qualified Data.Time.Clock as Time
-import qualified Data.Time.Calendar as Calendar
+import           Data.Maybe
+import qualified Data.Time.Calendar               as Calendar
+import qualified Data.Time.Clock                  as Time
+import           System.Console.CmdArgs.Verbosity
 import           System.Random
 
-import Chefkoch.DataTypes
-import Chefkoch.DataFunctions
+import           Chefkoch.DataFunctions
+import           Chefkoch.DataTypes
+
+
+sayNormal = whenNormal . putStrLn
+sayLoud = whenLoud . putStrLn
 
 
 getCurrentYearMonthDay :: IO (Year,Month,Day)

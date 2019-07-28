@@ -47,14 +47,13 @@ convertFraction tags@(t:ts)
   | otherwise     = t : convertFraction ts
 
 
-mkPartialRecipe [day, weekday, url, name] =
-  let url' = T.unpack url
-  in Recipe
-       (Just (read (T.unpack (T.init day))))
-       (str2Weekday (T.unpack weekday))
-       Nothing
-       Nothing
-       (T.unpack name)
-       url'
-       []
-       ""
+mkPartialRecipe (day, weekday, url, name) =
+  Recipe
+    day
+    weekday
+    Nothing
+    Nothing
+    name
+    url
+    []
+    ""

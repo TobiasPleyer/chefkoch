@@ -7,11 +7,12 @@
 module Chefkoch.Html.Megaparsec where
 
 import           Data.Proxy
-import           Data.Text         (Text)
-import qualified Data.Text         as T
-import           Data.Void         (Void (..))
-import           RIO.List          (headMaybe)
+import           Data.Text               (Text)
+import qualified Data.Text               as T
+import           Data.Void               (Void (..))
+import           RIO.List                (headMaybe)
 import           Text.HTML.TagSoup
+import qualified Text.HTML.TagSoup.Match as TSM
 import           Text.Megaparsec
 
 
@@ -50,8 +51,14 @@ instance Stream TagStream where
 type Parser = Parsec Void TagStream
 
 
-anyTagText :: Parser TagToken
-anyTagText = satisfy isTagText
+returnParseResult :: Stream s => Either (ParseErrorBundle s Void) a -> Either String a
+returnParseResult res = case res of
+  Left err -> Left $ errorBundlePretty err
+  Right ok -> Right ok
+
+
+
+-- Parser wrappers around the TagSoup matchers
 
 anyTag_ :: Parser TagToken
 anyTag_ = satisfy (const True)
@@ -65,8 +72,14 @@ anyTagPosition_ :: Parser TagToken
 anyTagPosition_ = satisfy isTagPosition
 anyTagComment_ :: Parser TagToken
 anyTagComment_ = satisfy isTagComment
+anyTagText_ :: Parser TagToken
+anyTagText_ = satisfy isTagText
 tagOpen_ :: Text -> Parser TagToken
 tagOpen_ s = satisfy (isTagOpenName s)
+tagOpenAttrs_ :: Text -> [Attribute Text] -> Parser TagToken
+tagOpenAttrs_ s attrs = satisfy (TagOpen s attrs ~==)
+tagOpenAttrNameLit_ :: Text -> Text -> (Text -> Bool) -> Parser TagToken
+tagOpenAttrNameLit_ t a p = satisfy (TSM.tagOpenAttrNameLit t a p)
 tagClose_ :: Text -> Parser TagToken
 tagClose_ s = satisfy (isTagCloseName s)
 
@@ -90,10 +103,25 @@ anyTagPosition :: Parser TagToken
 anyTagPosition = anyTagPosition_ <* consumeEmptyTags
 anyTagComment :: Parser TagToken
 anyTagComment = anyTagComment_ <* consumeEmptyTags
+anyTagText :: Parser TagToken
+anyTagText = anyTagText_ <* consumeEmptyTags
 tagOpen :: Text -> Parser TagToken
 tagOpen s = tagOpen_ s <* consumeEmptyTags
+tagOpenAttrs :: Text -> [Attribute Text] -> Parser TagToken
+tagOpenAttrs s attrs = tagOpenAttrs_ s attrs <* consumeEmptyTags
+tagOpenAttrNameLit :: Text -> Text -> (Text -> Bool) -> Parser TagToken
+tagOpenAttrNameLit t a p = tagOpenAttrNameLit_ t a p <* consumeEmptyTags
 tagClose :: Text -> Parser TagToken
 tagClose s = tagClose_ s <* consumeEmptyTags
+
+getText :: Parser Text
+getText = T.strip . fromTagText <$> anyTagText
+
+getText_ :: Parser Text
+getText_ = T.strip . fromTagText <$> anyTagText_
+
+getString :: Parser String
+getString = T.unpack <$> getText
 
 
 findEndTag str = go 0

@@ -33,7 +33,7 @@ wgetURL url = do
 
 
 wreqURL :: String -> IO T.Text
-wreqURL url = (TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody) <$> get url
+wreqURL url = TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody <$> get url
 
 
 fileURL :: String -> IO T.Text
@@ -48,11 +48,15 @@ downloadMonthlyRecipeListing grabber year month = do
                ++ show (month2Int month)
                ++ "&year="
                ++ show year
+    sayLoud $ "Grabbing URL: " ++ url
     grabber url
 
 
 downloadRecipePage :: (String -> IO T.Text) -> Recipe -> IO T.Text
-downloadRecipePage grabber = grabber . recipeUrl
+downloadRecipePage grabber recipe = do
+    let url = recipeUrl recipe
+    sayLoud $ "Downloading URL: " ++ url
+    grabber url
 
 
 downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber to use for download
@@ -60,12 +64,18 @@ downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber t
                       -> (Maybe Year, Maybe Month, Maybe Day) -- ^ date selection criteria
                       -> IO (Either String [Either String Recipe])
 downloadRecipesByDate grabber sparse (my,mm,md) = do
+    sayLoud "Downloading recipes by date"
     (year,month) <- yearMonthFromMaybe (my,mm)
     monthlyListing <- downloadMonthlyRecipeListing grabber year month
+    sayLoud "Parsing monthly listing..."
     let partialRecipesParseResult = parseMonthlyRecipeListing monthlyListing
+    sayLoud "...done"
     case partialRecipesParseResult of
-      Left err -> return $ Left err
+      Left err -> do
+        sayLoud "Parse failed"
+        return $ Left err
       Right partialRecipes -> do
+        sayLoud "Parse succeeded"
         let
           recipes = map ( modifyRecipeYear (Just year)
                         . modifyRecipeMonth (Just month)) partialRecipes
@@ -88,6 +98,7 @@ downloadRecipesByDate grabber sparse (my,mm,md) = do
 
 downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO (Either String Recipe)
 downloadRecipeByUrl grabber url = do
+    sayLoud $ "Downloading recipe by url: " ++ url
     recipePage <- grabber url
     let parseRecipePageParseResult = parseRecipePage recipePage
     case parseRecipePageParseResult of
@@ -100,9 +111,12 @@ downloadRecipeByUrl grabber url = do
 
 
 downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Either String Recipe]
-downloadRecipesByUrl grabber urls =
+downloadRecipesByUrl grabber urls = do
   let download = downloadRecipeByUrl grabber
-  in mapConcurrently download urls
+  sayLoud "Starting parallel download..."
+  recipes <- mapConcurrently download urls
+  sayLoud "...done"
+  return recipes
 
 
 -- Simple helpers
