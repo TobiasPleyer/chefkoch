@@ -50,14 +50,12 @@ yearMonthFromMaybe (my,mm) = do
   return (year,month)
 
 
-selectRecipesByDay :: Maybe Day -> [Recipe] -> [Recipe]
-selectRecipesByDay Nothing recipes = recipes
-selectRecipesByDay maybeDay recipes =
-  let maybeRecipe = find (\r -> recipeDay r == maybeDay) recipes
-  in
-    if isNothing maybeRecipe
-    then []
-    else [fromJust maybeRecipe]
+selectRecipesByDay :: Maybe Day -> [(Day, Weekday, String, String)] -> [(Day, Weekday, String, String)]
+selectRecipesByDay Nothing recipeInfos = recipeInfos
+selectRecipesByDay (Just day) recipeInfos =
+  case find (\(d, w, name, url) -> d == day) recipeInfos of
+    Nothing                -> []
+    Just (d, w, name, url) -> [(d, w, name, url)]
 
 
 
@@ -87,3 +85,16 @@ modifyRecipeIngredients ingr r = r{recipeIngredients=ingr}
 
 modifyRecipeInstruction :: String -> Recipe -> Recipe
 modifyRecipeInstruction inst r = r{recipeInstruction=inst}
+
+
+mkPartialRecipe :: (Day, Weekday, String, String) -> Recipe
+mkPartialRecipe (day, weekday, name, url) =
+  Recipe
+    (Just day)
+    (Just weekday)
+    Nothing
+    Nothing
+    name
+    url
+    []
+    ""

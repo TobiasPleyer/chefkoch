@@ -6,6 +6,7 @@ import           Control.Lens
 import           Control.Monad
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding       as T
+import qualified Data.Text.IO             as TIO
 import qualified Data.Text.Lazy           as TL
 import qualified Data.Text.Lazy.Encoding  as TL
 import           Network.HTTP
@@ -37,9 +38,7 @@ wreqURL url = TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody <$> get url
 
 
 fileURL :: String -> IO T.Text
-fileURL f = do
-    filecontent <- readFile f
-    return (T.pack filecontent)
+fileURL = TIO.readFile
 
 
 downloadMonthlyRecipeListing :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
@@ -52,9 +51,8 @@ downloadMonthlyRecipeListing grabber year month = do
     grabber url
 
 
-downloadRecipePage :: (String -> IO T.Text) -> Recipe -> IO T.Text
-downloadRecipePage grabber recipe = do
-    let url = recipeUrl recipe
+downloadRecipePage :: (String -> IO T.Text) -> String -> IO T.Text
+downloadRecipePage grabber url = do
     sayLoud $ "Downloading URL: " ++ url
     grabber url
 
@@ -62,38 +60,41 @@ downloadRecipePage grabber recipe = do
 downloadRecipesByDate :: (String -> IO T.Text)                -- ^ the grabber to use for download
                       -> Bool                                 -- ^ sparse or full download
                       -> (Maybe Year, Maybe Month, Maybe Day) -- ^ date selection criteria
-                      -> IO (Either String [Either String Recipe])
+                      -> IO [Recipe]
 downloadRecipesByDate grabber sparse (my,mm,md) = do
     sayLoud "Downloading recipes by date"
     (year,month) <- yearMonthFromMaybe (my,mm)
     monthlyListing <- downloadMonthlyRecipeListing grabber year month
     sayLoud "Parsing monthly listing..."
     let partialRecipesParseResult = parseMonthlyRecipeListing monthlyListing
-    sayLoud "...done"
     case partialRecipesParseResult of
       Left err -> do
-        sayLoud "Parse failed"
-        return $ Left err
-      Right partialRecipes -> do
+        sayLoud "Unable to parse monthly recipe listing. Reason:"
+        putStrLn err
+        return []
+      Right recipeInfos -> do
         sayLoud "Parse succeeded"
-        let
-          recipes = map ( modifyRecipeYear (Just year)
-                        . modifyRecipeMonth (Just month)) partialRecipes
-          recipeSelection = selectRecipesByDay md recipes
+        let recipeInfoSelection = selectRecipesByDay md recipeInfos
         if sparse
-        then
-          return $ Right $ map Right recipeSelection
-        else do
-          recipeDetails <- downloadRecipesByUrl grabber (map recipeUrl recipeSelection)
-          updatedRecipes <- forM (zip recipeDetails recipes)
-               (\(detail,recipe) ->
-                 case detail of
-                   Left err -> return $ Left err
-                   Right detail' ->
-                     ( return . Right
-                     . modifyRecipeIngredients (recipeIngredients detail')
-                     . modifyRecipeInstruction (recipeInstruction detail')) recipe)
-          return $ Right updatedRecipes
+        then return $ map mkPartialRecipe recipeInfoSelection
+        else reverse <$> foldM (\rs (day, weekday, name, url) -> do
+          recipeDetails <- parseRecipePage <$> downloadRecipePage grabber url
+          case recipeDetails of
+            Left err -> do
+              putStrLn $ "Error! Url: " ++ url ++ "\n" ++ err
+              return rs
+            Right (title,ingredients,instructions) ->
+              return $ Recipe
+                       { recipeDay = Just day
+                       , recipeWeekday = Just weekday
+                       , recipeMonth = mm
+                       , recipeYear = my
+                       , recipeName = name
+                       , recipeUrl = url
+                       , recipeIngredients = ingredients
+                       , recipeInstruction = instructions
+                       } : rs
+            ) [] recipeInfoSelection
 
 
 downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO (Either String Recipe)
@@ -110,13 +111,17 @@ downloadRecipeByUrl grabber url = do
                                   , recipeInstruction = inst}
 
 
-downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Either String Recipe]
+downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Recipe]
 downloadRecipesByUrl grabber urls = do
   let download = downloadRecipeByUrl grabber
   sayLoud "Starting parallel download..."
-  recipes <- mapConcurrently download urls
-  sayLoud "...done"
-  return recipes
+  eRecipes <- mapConcurrently download urls
+  foldM (\rs eRecipe -> case eRecipe of
+      Left err -> do
+        putStrLn err
+        return rs
+      Right r -> return (r:rs)
+    ) [] eRecipes
 
 
 -- Simple helpers

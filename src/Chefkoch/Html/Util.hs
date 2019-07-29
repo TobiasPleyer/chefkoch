@@ -45,15 +45,3 @@ convertFraction [] = []
 convertFraction tags@(t:ts)
   | t ~== "<sup>" = TagText (innerText (take 8 tags)) : convertFraction (drop 8 tags)
   | otherwise     = t : convertFraction ts
-
-
-mkPartialRecipe (day, weekday, url, name) =
-  Recipe
-    day
-    weekday
-    Nothing
-    Nothing
-    name
-    url
-    []
-    ""

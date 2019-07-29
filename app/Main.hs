@@ -31,40 +31,30 @@ run opts@Options{..} = do
     sayLoud $ "Options: " ++ show opts
     let month = fmap unsafeInt2Month optionMonth
     sayLoud $ "Month: " ++ show month
-    eRecipes <- if optionRandom
-               then do
-                 sayLoud "Choosing at random..."
-                 (year,month,day) <- getRandomYearMonthDay
-                 wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
-               else
-                 case optionUrl of
-                 Just url -> do
-                   sayLoud $ "Using URL: " ++ url
-                   recipe <- wreqDownloadRecipeByUrl url
-                   return $ Right [recipe]
-                 Nothing -> do
-                   sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
-                   wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
-    case eRecipes of
-      Left err -> do
-        putStrLn "Error! Unable to continue"
-        putStrLn err
-      Right recipes -> do
-        sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
-        let maybeFormatter = lookup optionFormat formatterMap
-        formatter <- case maybeFormatter of
-                     Just fm -> return fm
-                     Nothing -> do
-                       putStrLn ("Unknown format '" ++ optionFormat ++ "', defaulting to 'raw'")
-                       return rawFormatter
-        let (nok, ok) = partitionEithers recipes
-        unless (null nok) $ do
-            putStrLn "The following errors occurred while parsing the recipes:"
-            forM_ nok putStrLn
-        let formattedRecipes = formatter ok
-        if optionOutput == "-"
-        then BC.putStrLn formattedRecipes
-        else BC.writeFile optionOutput formattedRecipes
+    recipes <- if optionRandom
+                then do
+                  sayLoud "Choosing at random..."
+                  (year,month,day) <- getRandomYearMonthDay
+                  wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
+                else case optionUrl of
+                  Just url -> do
+                    sayLoud $ "Using URL: " ++ url
+                    wreqDownloadRecipesByUrl [url]
+                  Nothing -> do
+                    sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
+                    wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
+    sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
+    unless (null recipes) $ do
+      let maybeFormatter = lookup optionFormat formatterMap
+      formatter <- case maybeFormatter of
+                   Just fm -> return fm
+                   Nothing -> do
+                     putStrLn ("Unknown format '" ++ optionFormat ++ "', defaulting to 'raw'")
+                     return rawFormatter
+      let formattedRecipes = formatter recipes
+      if optionOutput == "-"
+      then BC.putStrLn formattedRecipes
+      else BC.writeFile optionOutput formattedRecipes
 
 
 main = do
