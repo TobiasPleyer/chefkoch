@@ -59,10 +59,12 @@ parseRecipePage = returnParseResult . M.parse pRecipePage "" . TS.parseTags
       M.skipManyTill anyTag pRecipeTitle
       title <- getString
       M.skipManyTill anyTag pIngredientTableStart
-      tagOpen "tbody"
-      ingredients <- M.many (T.unpack <$> pIngredientTableRow)
-      tagClose "tbody"
-      tagClose "table"
+      -- Sometimes a recipe has more than one ingredient table.
+      -- To account for that possibility we put the consumed <table> tag back
+      -- and then start `many` parses of tables
+      input <- M.getInput
+      M.setInput $ TS.TagOpen "table" [("class", "ingredients table-header")] : input
+      ingredients <- (map T.unpack . concat) <$> M.many pIngredientTable
       M.skipManyTill anyTag pInstructionsStart
       M.skipManyTill anyTag (tagOpen "div")
       instructions <- T.unpack . T.unlines <$> M.sepBy1 getText (M.optional (M.many (section "br")))
@@ -75,18 +77,24 @@ parseRecipePage = returnParseResult . M.parse pRecipePage "" . TS.parseTags
     pIngredientTableStart :: Parser TagToken
     pIngredientTableStart = tagOpenAttrNameLit "table" "class" (== "ingredients table-header")
 
+    pIngredientTable :: Parser [Text]
+    pIngredientTable =
+      inside "table" $ do
+        M.optional (section "thead")
+        inside "tbody" $ M.many pIngredientTableRow
+
     pIngredientTableRow :: Parser Text
     pIngredientTableRow = do
       let pSpecials = M.many (M.choice [tagOpen_ "sup", tagClose_ "sup", tagOpen_ "sub", tagClose_ "sub"])
       inside "tr" $ do
         quantity <- inside "td" $ do
           M.optional $ tagOpen "span"
-          qty <- getAllText
+          qty <- shrinkWhitespace <$> getAllText
           M.optional $ tagClose "span"
           return qty
         ingredient <- inside "td" $ inside "span" $ do
           M.optional $ tagOpen "a"
-          ingredient <- getAllText
+          ingredient <- shrinkWhitespace <$> getAllText
           M.optional $ tagClose "a"
           return ingredient
         return $ if T.null quantity
@@ -115,3 +123,11 @@ parseRecipePage = returnParseResult . M.parse pRecipePage "" . TS.parseTags
             textRelated (TS.TagOpen t _)  = t `elem` ["sup", "sub", "b", "i"]
             textRelated (TS.TagClose t)   = t `elem` ["sup", "sub", "b", "i"]
             textRelated _                 = False
+
+    shrinkWhitespace :: Text -> Text
+    shrinkWhitespace = T.concat . map shrink . T.group
+      where shrink t = case T.uncons t of
+              Nothing -> t
+              Just (c,t') -> if c `elem` [' ', '\n', '\t']
+                             then " "
+                             else t

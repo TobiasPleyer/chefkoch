@@ -26,7 +26,7 @@ import           Chefkoch.Util
 
 run :: Options -> IO ()
 run opts@Options{..} = do
-    setVerbosity Loud
+    setVerbosity Quiet
     sayLoud "Starting execution"
     sayLoud $ "Options: " ++ show opts
     let month = fmap unsafeInt2Month optionMonth

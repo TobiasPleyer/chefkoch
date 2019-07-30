@@ -87,8 +87,8 @@ downloadRecipesByDate grabber sparse (my,mm,md) = do
               return $ Recipe
                        { recipeDay = Just day
                        , recipeWeekday = Just weekday
-                       , recipeMonth = mm
-                       , recipeYear = my
+                       , recipeMonth = Just month
+                       , recipeYear = Just year
                        , recipeName = name
                        , recipeUrl = url
                        , recipeIngredients = ingredients
