@@ -1,20 +1,21 @@
-{ mkDerivation, aeson, array, async, base, bytestring, hpack, HTTP
-, lens, optparse-applicative, process, random, stdenv, tagsoup
-, text, time, wreq, yaml
+{ mkDerivation, aeson, array, async, base, bytestring, cmdargs
+, containers, hpack, HTTP, lens, megaparsec, optparse-applicative
+, process, random, rio, stdenv, tagsoup, text, time, wreq, yaml
 }:
 mkDerivation {
   pname = "chefkoch";
-  version = "1.1.1.0";
+  version = "1.2.0.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson array async base bytestring HTTP lens process random tagsoup
-    text time wreq yaml
+    aeson array async base bytestring cmdargs containers HTTP lens
+    megaparsec process random rio tagsoup text time wreq yaml
   ];
   libraryToolDepends = [ hpack ];
   executableHaskellDepends = [
-    base bytestring optparse-applicative text
+    base bytestring cmdargs megaparsec optparse-applicative tagsoup
+    text
   ];
   preConfigure = "hpack";
   homepage = "https://github.com/TobiasPleyer/chefkoch#readme";
