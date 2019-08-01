@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 79ddb410be2e152f3db50a815d1a9284205bf5f4bcbcb0e7a653c231c34b1446
+-- hash: f6d9651fe561740b61cadd9388af0d3edb6926948c144ea46c9d739fdf6cb507
 
 name:           chefkoch
 version:        1.2.0.0
@@ -66,10 +66,13 @@ executable chefkoch
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
     , bytestring
     , chefkoch
     , cmdargs
+    , couch-simple
+    , http-client
     , megaparsec
     , optparse-applicative
     , tagsoup

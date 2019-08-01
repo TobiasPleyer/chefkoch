@@ -56,7 +56,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - aeson
     - chefkoch
+    - couch-simple
+    - http-client
     - tagsoup
     - megaparsec
     - optparse-applicative
