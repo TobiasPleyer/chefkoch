@@ -4,6 +4,7 @@
 
 import           Control.Exception.Base                (bracket)
 import           Control.Monad
+import           Control.Monad.IO.Class                (MonadIO (..))
 import qualified Data.ByteString.Char8                 as BC
 import           Data.Either                           (partitionEithers)
 import           Data.List                             (partition)
@@ -18,6 +19,7 @@ import qualified Text.Megaparsec                       as M
 
 import           Chefkoch.CmdLine
 import           Chefkoch.DataFunctions
+import           Chefkoch.DataTypes
 import           Chefkoch.Format
 import           Chefkoch.Html.Megaparsec
 import           Chefkoch.Html.Parser
@@ -34,44 +36,32 @@ import qualified Data.Aeson                            as A
 import qualified Network.HTTP.Client                   as Http
 
 
-run :: Options -> IO ()
+run :: Options -> IO [Recipe]
 run opts@Options{..} = do
     setVerbosity Quiet
     sayLoud "Starting execution"
     sayLoud $ "Options: " ++ show opts
     let month = fmap unsafeInt2Month optionMonth
     sayLoud $ "Month: " ++ show month
-    recipes <- if optionRandom
-                then do
-                  sayLoud "Choosing at random..."
-                  (year,month,day) <- getRandomYearMonthDay
-                  wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
-                else case optionUrl of
-                  Just url -> do
-                    sayLoud $ "Using URL: " ++ url
-                    wreqDownloadRecipesByUrl [url]
-                  Nothing -> do
-                    sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
-                    wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
-    sayLoud $ "Found " ++ show (length recipes) ++ " recipes"
-    unless (null recipes) $ do
-      let maybeFormatter = lookup optionFormat formatterMap
-      formatter <- case maybeFormatter of
-                   Just fm -> return fm
-                   Nothing -> do
-                     putStrLn ("Unknown format '" ++ optionFormat ++ "', defaulting to 'raw'")
-                     return rawFormatter
-      let formattedRecipes = formatter recipes
-      if optionOutput == "-"
-      then BC.putStrLn formattedRecipes
-      else BC.writeFile optionOutput formattedRecipes
+    if optionRandom
+     then do
+       sayLoud "Choosing at random..."
+       (year,month,day) <- getRandomYearMonthDay
+       wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
+     else case optionUrl of
+       Just url -> do
+         sayLoud $ "Using URL: " ++ url
+         wreqDownloadRecipesByUrl [url]
+       Nothing -> do
+         sayLoud $ "Using (year,month,day): " ++ show (optionYear, month, optionDay)
+         wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
 
 
-myOptions = Options
+defaultOptions = Options
   { optionYear = Nothing
   , optionMonth = Nothing
   , optionDay = Nothing
-  , optionUrl = Just "https://www.chefkoch.de/rezepte/1841351298407440/Haferflocken-Kaese-Bratling.html"
+  , optionUrl = Nothing
   , optionUrlsOnly = False
   , optionRandom = False
   , optionOutput = "-"
@@ -80,8 +70,6 @@ myOptions = Options
 
 
 main = do
-    --options <- execParser optionParser
-    --run myOptions
     manager <- Http.newManager Http.defaultManagerSettings
     let ctx = DbT.Context
               { ctxManager = manager
@@ -93,15 +81,19 @@ main = do
               , ctxCookies = Http.createCookieJar []
               , ctxDb = Just (DbT.Db "recipes")
               }
-    v :: DbT.Result A.Value <- DbS.allDbs ctx
-    print v
-    e :: DbT.Result Bool <- DbDb.exists ctx
-    print e
-    c :: DbT.Result A.Value <- DbDb.create ctx
-    print c
-    v2 :: DbT.Result A.Value <- DbS.allDbs ctx
-    print v2
-    d :: DbT.Result A.Value <- DbDb.delete ctx
-    print d
-    v3 :: DbT.Result A.Value <- DbS.allDbs ctx
-    print v3
+    --putStrLn "Database does not exist - will create it now..."
+    --c :: DbT.Result A.Value <- DbDb.create ctx
+    --print c
+    putStrLn "Starting download of recipes..."
+    forM_ [2018,2019] $ \year -> do
+      putStrLn $ "year: " ++ show year
+      forM_ [1..12] $ \month -> do
+        putStrLn $ "  month: " ++ show month
+        let options = defaultOptions { optionYear = Just year
+                                     , optionMonth = Just month }
+        recipes <- run options
+        forM_ recipes $ \recipe -> do
+          putStrLn $ "    Uploading " ++ recipeName recipe
+          r :: DbT.Result A.Value <- DbDb.createDoc False recipe ctx
+          return ()
+    putStrLn "Done"
