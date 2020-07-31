@@ -1,10 +1,10 @@
 name:                chefkoch
-version:             1.2.0.0
+version:             1.2.1.0
 github:              "TobiasPleyer/chefkoch"
 license:             BSD3
 author:              "Tobias Pleyer"
 maintainer:          "tobi.pleyer@gmail.com"
-copyright:           "2018 Tobias Pleyer"
+copyright:           "2020 Tobias Pleyer"
 
 extra-source-files:
 - README.md

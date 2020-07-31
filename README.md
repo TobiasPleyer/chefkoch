@@ -132,3 +132,12 @@ $ chefkoch -y 2015 -m 6 -d 12 --urls-only
 ```
 $ chefkoch -y 2017 --format=json -o-
 ```
+
+## Nix
+
+This package uses a fixed version of nixpkgs to guarantee reproducability. In order to use a different version of
+nixpkgs you can run this command:
+
+```
+$ nix-prefetch-github --rev '19.09' NixOS nixpkgs > nix/nixpkgs/github.json
+```
