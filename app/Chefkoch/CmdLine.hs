@@ -12,7 +12,8 @@ data Options = Options
     optionUrlsOnly :: Bool,
     optionRandom :: Bool,
     optionOutput :: String,
-    optionFormat :: String
+    optionFormat :: String,
+    optionVerbose :: Bool
   }
   deriving (Show)
 
@@ -75,6 +76,11 @@ chefkochOptions =
           <> short 'f'
           <> value "yaml"
           <> help "Specify the format to be used for output. Supported values: raw, yaml"
+      )
+    <*> switch
+      ( long "verbose"
+          <> short 'v'
+          <> help "Send more info about program execution to stdout"
       )
 
 optionParser =
