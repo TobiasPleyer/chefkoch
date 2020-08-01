@@ -41,7 +41,7 @@ convertFraction tags@(t : ts)
   | otherwise = t : convertFraction ts
 
 shrinkWhitespace :: Text -> Text
-shrinkWhitespace = T.concat . map shrink . T.group
+shrinkWhitespace = T.strip . T.concat . map shrink . T.group
   where
     shrink t = case T.uncons t of
       Nothing -> t

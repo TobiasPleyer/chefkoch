@@ -29,9 +29,9 @@ type Year = Int
 
 data RecipeMeta = RecipeMeta
   { metaRating :: Double,
-    metaPrepTime :: Int,
+    metaPrepTime :: String,
     metaDifficulty :: String,
-    metaKCalories :: Int,
+    metaKCalories :: Maybe Int,
     metaTags :: [String],
     metaAuthor :: String
   }

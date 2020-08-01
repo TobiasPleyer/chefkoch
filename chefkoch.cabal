@@ -45,6 +45,7 @@ library
     , tagsoup
     , text
     , time
+    , transformers
     , wreq
     , yaml
   exposed-modules:

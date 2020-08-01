@@ -43,6 +43,7 @@ library:
   - random
   - rio
   - tagsoup
+  - transformers
   - time
   - wreq
   - yaml

@@ -6,6 +6,7 @@
 
 module Chefkoch.Html.Megaparsec where
 
+import Control.Monad.Trans.Class (MonadTrans (..))
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -14,6 +15,8 @@ import RIO.List (headMaybe)
 import Text.HTML.TagSoup
 import qualified Text.HTML.TagSoup.Match as TSM
 import Text.Megaparsec
+import Text.Megaparsec.Error (parseErrorPretty)
+import Text.Megaparsec.Internal (Reply (..), Result (..), runParsecT)
 
 type TagToken = Tag Text
 
@@ -163,3 +166,12 @@ inside str p = do
 section str = inside str (pure ())
 
 section_ str = section str <* optional anyEmptyTagText
+
+subParseUntil :: Monad m => Parser m a -> Parser m b -> Parser m b
+subParseUntil end sub = do
+  state <- getParserState
+  tags <- manyTill anyTag end
+  Reply _ _ r <- lift $ runParsecT sub (state {stateInput = tags})
+  case r of
+    Error e -> fail . parseErrorPretty $ e
+    OK b -> return b

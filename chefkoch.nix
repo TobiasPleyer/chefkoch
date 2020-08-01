@@ -1,6 +1,7 @@
 { mkDerivation, aeson, array, async, base, bytestring, cmdargs
 , containers, hpack, HTTP, lens, megaparsec, optparse-applicative
-, process, random, rio, stdenv, tagsoup, text, time, wreq, yaml
+, process, random, rio, stdenv, tagsoup, text, time, transformers
+, wreq, yaml
 }:
 mkDerivation {
   pname = "chefkoch";
@@ -10,7 +11,8 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson array async base bytestring cmdargs containers HTTP lens
-    megaparsec process random rio tagsoup text time wreq yaml
+    megaparsec process random rio tagsoup text time transformers wreq
+    yaml
   ];
   libraryToolDepends = [ hpack ];
   executableHaskellDepends = [
