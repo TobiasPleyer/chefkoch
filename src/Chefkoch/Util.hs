@@ -1,13 +1,20 @@
 module Chefkoch.Util where
 
 import Chefkoch.DataFunctions
+import Chefkoch.Html.Megaparsec
 import Chefkoch.Types
+import Control.Monad (forM_)
 import Data.List
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Time.Calendar as Calendar
 import qualified Data.Time.Clock as Time
 import System.Console.CmdArgs.Verbosity
 import System.Random
+import Text.Megaparsec.Error (ParseError (..), ParseErrorBundle (..), ShowErrorComponent, errorOffset, parseErrorPretty)
+import Text.Megaparsec.Stream (Stream)
 
 sayNormal = whenNormal . putStrLn
 
@@ -50,3 +57,15 @@ selectRecipesByDay (Just day) recipeInfos =
   case find (\(d, name, url) -> d == day) recipeInfos of
     Nothing -> []
     Just (d, name, url) -> [(d, name, url)]
+
+showParseErrorWithSource :: (Show s, Stream s, ShowErrorComponent e) => Text -> Int -> [(Int, Int)] -> ParseErrorBundle s e -> IO ()
+showParseErrorWithSource source ctx poss (ParseErrorBundle errs posState) = do
+  print posState
+  let sourceLines = T.lines source
+  forM_ (NE.toList errs) $ \e -> do
+    let offset = errorOffset e
+        -- TODO: This is not sophisticated enough
+        relevantLines = take (2 * ctx) . drop (offset - ctx) $ sourceLines
+    putStrLn $ parseErrorPretty e
+    putStrLn ""
+    putStrLn . T.unpack . T.unlines $ relevantLines

@@ -89,6 +89,10 @@ tagsParser = undefined
 authorParser :: Parser IO String
 authorParser = undefined
 
+-- This parser is identical to 'recipeParser', but with every subparser wrapped with 'dbg'
+recipeParserDbg :: Parser IO Recipe
+recipeParserDbg = undefined
+
 --  where
 --    pRecipePage = do
 --      M.skipManyTill anyTag pRecipeTitle
