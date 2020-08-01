@@ -13,12 +13,16 @@ import qualified Data.Time.Calendar as Calendar
 import qualified Data.Time.Clock as Time
 import System.Console.CmdArgs.Verbosity
 import System.Random
+import Text.Megaparsec (PosState (..))
 import Text.Megaparsec.Error (ParseError (..), ParseErrorBundle (..), ShowErrorComponent, errorOffset, parseErrorPretty)
 import Text.Megaparsec.Stream (Stream)
 
 sayNormal = whenNormal . putStrLn
 
 sayLoud = whenLoud . putStrLn
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
 
 getCurrentYearMonthDay :: IO (Year, Month, Day)
 getCurrentYearMonthDay = do
@@ -60,12 +64,13 @@ selectRecipesByDay (Just day) recipeInfos =
 
 showParseErrorWithSource :: (Show s, Stream s, ShowErrorComponent e) => Text -> Int -> [(Int, Int)] -> ParseErrorBundle s e -> IO ()
 showParseErrorWithSource source ctx poss (ParseErrorBundle errs posState) = do
-  --print posState
   let sourceLines = T.lines source
   forM_ (NE.toList errs) $ \e -> do
     let offset = errorOffset e
+        (row, col) = poss !! offset
         -- TODO: This is not sophisticated enough
-        relevantLines = take (2 * ctx) . drop (offset - ctx) $ sourceLines
+        relevantLines = take (2 * ctx) . drop (row - ctx) $ sourceLines
     putStrLn $ parseErrorPretty e
     putStrLn ""
+    sayLoud $ "Problem occurred in row " <> show row <> " column " <> show col
     putStrLn . T.unpack . T.unlines $ relevantLines
