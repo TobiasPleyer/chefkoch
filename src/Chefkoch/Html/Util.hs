@@ -1,7 +1,7 @@
 module Chefkoch.Html.Util where
 
 import Chefkoch.DataFunctions
-import Chefkoch.DataTypes
+import Chefkoch.Types
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 

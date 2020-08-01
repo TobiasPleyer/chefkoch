@@ -6,9 +6,9 @@
 module Chefkoch.Html.Parser where
 
 import Chefkoch.DataFunctions
-import Chefkoch.DataTypes
 import Chefkoch.Html.Megaparsec
 import Chefkoch.Html.Util
+import Chefkoch.Types
 import Control.Monad (guard)
 import Data.Char (isSpace)
 import Data.Text (Text)

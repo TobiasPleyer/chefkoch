@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "chefkoch";
-  version = "1.2.0.0";
+  version = "1.2.1.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
@@ -17,7 +17,7 @@ mkDerivation {
     base bytestring cmdargs megaparsec optparse-applicative tagsoup
     text
   ];
-  preConfigure = "hpack";
+  prePatch = "hpack";
   homepage = "https://github.com/TobiasPleyer/chefkoch#readme";
   license = stdenv.lib.licenses.bsd3;
 }

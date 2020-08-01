@@ -3,7 +3,7 @@
 module Chefkoch.Format where
 
 import Chefkoch.DataFunctions
-import Chefkoch.DataTypes
+import Chefkoch.Types
 import qualified Data.Aeson as Json
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC

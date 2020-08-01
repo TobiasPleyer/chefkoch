@@ -7,8 +7,8 @@ module Chefkoch.Http
 where
 
 import Chefkoch.DataFunctions
-import Chefkoch.DataTypes
 import Chefkoch.Html.Parser
+import Chefkoch.Types
 import Chefkoch.Util
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Lens

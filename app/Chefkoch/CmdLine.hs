@@ -1,6 +1,6 @@
 module Chefkoch.CmdLine where
 
-import Chefkoch.DataTypes
+import Chefkoch.Types
 import Data.Semigroup ((<>))
 import Options.Applicative
 

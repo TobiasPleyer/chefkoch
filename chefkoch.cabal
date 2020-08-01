@@ -49,7 +49,7 @@ library
     , yaml
   exposed-modules:
       Chefkoch.DataFunctions
-      Chefkoch.DataTypes
+      Chefkoch.Types
       Chefkoch.Format
       Chefkoch.Html.Megaparsec
       Chefkoch.Html.Parser

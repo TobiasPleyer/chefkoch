@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Chefkoch.DataTypes where
+module Chefkoch.Types where
 
 import Data.Aeson
 import qualified Data.Text as T

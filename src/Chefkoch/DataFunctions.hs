@@ -1,6 +1,6 @@
 module Chefkoch.DataFunctions where
 
-import Chefkoch.DataTypes
+import Chefkoch.Types
 
 month2Int :: Month -> Int
 month2Int January = 1

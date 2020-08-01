@@ -1,7 +1,7 @@
 module Chefkoch.Util where
 
 import Chefkoch.DataFunctions
-import Chefkoch.DataTypes
+import Chefkoch.Types
 import Data.List
 import Data.Maybe
 import qualified Data.Time.Calendar as Calendar
