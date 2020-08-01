@@ -20,6 +20,7 @@ import Text.HTML.TagSoup (Tag (..), (~/=), (~==))
 import qualified Text.HTML.TagSoup as TS
 import Text.Megaparsec
   ( (<|>),
+    MonadParsec (..),
     choice,
     getInput,
     many,
@@ -71,14 +72,19 @@ recipeParser url = do
   input <- getInput
   setInput $ TagOpen "table" [("class", "ingredients table-header")] : input
   ingredients <- ingredientsParser
-  --skipUntil instructionHeaderParser
-  --skipUntil $ tagOpen "div"
-  --instructions <- instructionsParser
-  --tagClose "div"
-  return $ Recipe (0, January, 0) title url ingredients [] (RecipeMeta 0.0 0 "" 0 [] "")
+  liftIO . sayLoud $ "Finished parsing of the ingredients table"
+  skipUntil instructionHeaderParser
+  liftIO . sayLoud $ "Found the start of the instructions"
+  skipUntil $ tagOpen "div"
+  instructions <- instructionsParser
+  liftIO . sayLoud $ "Finished parsing of the instruction"
+  tagClose "div"
+  return $ Recipe (0, January, 0) title url ingredients instructions (RecipeMeta 0.0 0 "" 0 [] "")
 
+-- We need the 'try' here because if we find another h2 header and then look into it we have already
+-- consumed input. If now we fail because the header text does not match this results in a parse error.
 instructionHeaderParser :: Parser IO TagToken
-instructionHeaderParser = do
+instructionHeaderParser = try $ do
   tagOpen "h2"
   txt <- getText
   guard (txt == "Zubereitung")
@@ -131,9 +137,7 @@ ingredientsTableRowParser = do
   return $ T.unpack row
 
 instructionsParser :: Parser IO [String]
-instructionsParser = do
-  inst <- T.unpack . T.unlines <$> sepBy1 getText (optional (many (section "br")))
-  return [inst]
+instructionsParser = fmap T.unpack <$> sepBy1 getText (optional (many (section "br")))
 
 tagsParser :: Parser IO [String]
 tagsParser = undefined
@@ -190,76 +194,3 @@ recipeParserDbg url = dbg "recipeParser" $ recipeParser url
 --
 --authorParserDbg :: Parser IO String
 --authorParserDbg = dbg "authorParser" authorParser
-
---  where
---    pRecipePage = do
---      M.skipManyTill anyTag pRecipeTitle
---      title <- getString
---      M.skipManyTill anyTag pIngredientTableStart
---      -- Sometimes a recipe has more than one ingredient table.
---      -- To account for that possibility we put the consumed <table> tag back
---      -- and then start `many` parses of tables
---      input <- M.getInput
---      M.setInput $ TS.TagOpen "table" [("class", "ingredients table-header")] : input
---      ingredients <- map T.unpack . concat <$> M.many pIngredientTable
---      M.skipManyTill anyTag pInstructionsStart
---      M.skipManyTill anyTag (tagOpen "div")
---      instructions <- T.unpack . T.unlines <$> M.sepBy1 getText (M.optional (M.many (section "br")))
---      tagClose "div"
---      return (title, ingredients, instructions)
---    pRecipeTitle :: Parser TagToken
---    pRecipeTitle = tagOpen "h1"
---    pIngredientTableStart :: Parser TagToken
---    pIngredientTableStart = tagOpenAttrNameLit "table" "class" (== "ingredients table-header")
---    pIngredientTable :: Parser [Text]
---    pIngredientTable =
---      inside "table" $ do
---        M.optional (section "thead")
---        inside "tbody" $ M.many pIngredientTableRow
---    pIngredientTableRow :: Parser Text
---    pIngredientTableRow = do
---      let pSpecials = M.many (M.choice [tagOpen_ "sup", tagClose_ "sup", tagOpen_ "sub", tagClose_ "sub"])
---      inside "tr" $ do
---        quantity <- inside "td" $ do
---          M.optional $ tagOpen "span"
---          qty <- shrinkWhitespace <$> getAllText
---          M.optional $ tagClose "span"
---          return qty
---        ingredient <- inside "td" $ inside "span" $ do
---          M.optional $ tagOpen "a"
---          ingredient <- shrinkWhitespace <$> getAllText
---          M.optional $ tagClose "a"
---          return ingredient
---        return $
---          if T.null quantity
---            then ingredient
---            else quantity <> " " <> ingredient
---    pInstructionsStart :: Parser TagToken
---    pInstructionsStart = do
---      tagOpen "h2"
---      txt <- getText
---      guard (txt == "Zubereitung")
---      tagClose "h2"
---    getAllText :: Parser Text
---    getAllText = go ""
---      where
---        go t = next t M.<|> return t
---        next t = do
---          tag <- M.satisfy textRelated
---          if TS.isTagText tag
---            then go (t <> T.strip (TS.fromTagText tag))
---            else go t
---        textRelated (TS.TagComment _) = True
---        textRelated (TS.TagText _) = True
---        textRelated (TS.TagOpen t _) = t `elem` ["sup", "sub", "b", "i"]
---        textRelated (TS.TagClose t) = t `elem` ["sup", "sub", "b", "i"]
---        textRelated _ = False
---    shrinkWhitespace :: Text -> Text
---    shrinkWhitespace = T.concat . map shrink . T.group
---      where
---        shrink t = case T.uncons t of
---          Nothing -> t
---          Just (c, t') ->
---            if c `elem` [' ', '\n', '\t']
---              then " "
---              else t
