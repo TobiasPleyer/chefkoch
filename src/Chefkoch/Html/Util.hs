@@ -2,6 +2,7 @@ module Chefkoch.Html.Util where
 
 import Chefkoch.DataFunctions
 import Chefkoch.Types
+import Data.Text (Text)
 import qualified Data.Text as T
 import Text.HTML.TagSoup
 
@@ -38,3 +39,13 @@ convertFraction [] = []
 convertFraction tags@(t : ts)
   | t ~== "<sup>" = TagText (innerText (take 8 tags)) : convertFraction (drop 8 tags)
   | otherwise = t : convertFraction ts
+
+shrinkWhitespace :: Text -> Text
+shrinkWhitespace = T.concat . map shrink . T.group
+  where
+    shrink t = case T.uncons t of
+      Nothing -> t
+      Just (c, t') ->
+        if c `elem` [' ', '\n', '\t']
+          then T.pack " "
+          else t

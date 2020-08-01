@@ -142,6 +142,9 @@ getText_ = T.strip . fromTagText <$> anyTagText_
 getString :: Parser m String
 getString = T.unpack <$> getText
 
+skipUntil :: Parser m a -> Parser m a
+skipUntil p = anyTag `skipManyTill` p
+
 findEndTag str = go 0
   where
     go n = anyTag >>= choose n

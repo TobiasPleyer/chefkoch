@@ -54,7 +54,7 @@ run opts@Options {..} = do
           return []
   sayLoud $ "Successfully downloaded " <> show (length taggedSources) <> " recipes pages"
   unless (null taggedSources) $ do
-    parseResults <- mapM (\(url, html) -> first (url,) <$> runParserT recipeParser url (parseTags html)) taggedSources
+    parseResults <- mapM (\(url, html) -> first (url,) <$> runParserT (recipeParser url) url (parseTags html)) taggedSources
     let (fails, succs) = partitionEithers parseResults
     if null fails
       then putStrLn "All pages were successfully parsed"
@@ -71,7 +71,7 @@ run opts@Options {..} = do
         let html = snd . fromJust . find ((== u) . fst) $ taggedSources
             (poss, tags) = partition isTagPosition . parseTagsOptions (parseOptions {optTagPosition = True}) $ html
             posTuples = fmap (\case (TagPosition r c) -> (r, c)) poss
-        parseResult <- runParserT recipeParserDbg u tags
+        parseResult <- runParserT (recipeParserDbg u) u tags
         either (showParseErrorWithSource html 10 posTuples) (const . putStrLn $ u <> " did not fail again.") parseResult
       putStrLn "Done"
     let maybeFormatter = lookup optionFormat formatterMap

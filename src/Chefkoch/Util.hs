@@ -60,7 +60,7 @@ selectRecipesByDay (Just day) recipeInfos =
 
 showParseErrorWithSource :: (Show s, Stream s, ShowErrorComponent e) => Text -> Int -> [(Int, Int)] -> ParseErrorBundle s e -> IO ()
 showParseErrorWithSource source ctx poss (ParseErrorBundle errs posState) = do
-  print posState
+  --print posState
   let sourceLines = T.lines source
   forM_ (NE.toList errs) $ \e -> do
     let offset = errorOffset e
