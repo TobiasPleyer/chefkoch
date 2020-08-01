@@ -19,7 +19,7 @@ import qualified Text.HTML.TagSoup as TS
 import qualified Text.Megaparsec as M
 import Text.Megaparsec.Debug (dbg)
 
-parseMonthlyRecipeListing :: T.Text -> Either String [(Day, Weekday, String, String)]
+parseMonthlyRecipeListing :: Text -> Either String [(Day, Weekday, String, String)]
 parseMonthlyRecipeListing = returnParseResult . M.parse pMonthlyListing "" . TS.parseTags
   where
     pMonthlyListing :: Parser [(Day, Weekday, String, String)]
@@ -46,7 +46,7 @@ parseMonthlyRecipeListing = returnParseResult . M.parse pMonthlyListing "" . TS.
           return (T.unpack url, T.unpack name)
         return (day, weekday, name, url)
 
-parseRecipePage :: T.Text -> Either String (String, [String], String)
+parseRecipePage :: Text -> Either String (String, [String], String)
 parseRecipePage = returnParseResult . M.parse pRecipePage "" . TS.parseTags
   where
     pRecipePage = do

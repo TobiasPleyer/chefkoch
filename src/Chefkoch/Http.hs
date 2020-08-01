@@ -7,6 +7,7 @@ import Chefkoch.Util
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Lens
 import Control.Monad
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as TIO
@@ -17,40 +18,39 @@ import Network.Wreq
 import System.IO
 import System.Process
 
-openURL :: String -> IO T.Text
+openURL :: String -> IO Text
 openURL url = fmap T.pack $ getResponseBody =<< simpleHTTP (getRequest url)
 
-wgetURL :: String -> IO T.Text
+wgetURL :: String -> IO Text
 wgetURL url = do
   let wgetPath = "/usr/bin/wget"
       wgetArgs = [url, "-qO-"]
   htmlString <- readProcess wgetPath wgetArgs ""
   return (T.pack htmlString)
 
-wreqURL :: String -> IO T.Text
+wreqURL :: String -> IO Text
 wreqURL url = TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody <$> get url
 
-fileURL :: String -> IO T.Text
+fileURL :: String -> IO Text
 fileURL = TIO.readFile
 
-downloadMonthlyRecipeListing :: (String -> IO T.Text) -> Year -> Month -> IO T.Text
+downloadMonthlyRecipeListing :: (String -> IO Text) -> Year -> Month -> IO Text
 downloadMonthlyRecipeListing grabber year month = do
   let url =
         "https://www.chefkoch.de/rezept-des-tages.php?month="
-          ++ show (month2Int month)
-          ++ "&year="
-          ++ show year
-  sayLoud $ "Grabbing URL: " ++ url
-  grabber url
+          <> show (month2Int month)
+          <> "&year="
+          <> show year
+  downloadRecipePage grabber url
 
-downloadRecipePage :: (String -> IO T.Text) -> String -> IO T.Text
+downloadRecipePage :: (String -> IO Text) -> String -> IO Text
 downloadRecipePage grabber url = do
   sayLoud $ "Downloading URL: " ++ url
   grabber url
 
 downloadRecipesByDate ::
   -- | the grabber to use for download
-  (String -> IO T.Text) ->
+  (String -> IO Text) ->
   -- | sparse or full download
   Bool ->
   -- | date selection criteria
@@ -98,12 +98,11 @@ downloadRecipesByDate grabber sparse (my, mm, md) = do
               []
               recipeInfoSelection
 
-downloadRecipeByUrl :: (String -> IO T.Text) -> String -> IO (Either String Recipe)
+downloadRecipeByUrl :: (String -> IO Text) -> String -> IO (Either String Recipe)
 downloadRecipeByUrl grabber url = do
-  sayLoud $ "Downloading recipe by url: " ++ url
-  recipePage <- grabber url
-  let parseRecipePageParseResult = parseRecipePage recipePage
-  case parseRecipePageParseResult of
+  recipePageSource <- downloadRecipePage grabber url
+  let parseResult = parseRecipePage recipePageSource
+  case parseResult of
     Left err -> return $ Left err
     Right (title, ingr, inst) ->
       return $
@@ -115,7 +114,7 @@ downloadRecipeByUrl grabber url = do
               recipeInstruction = inst
             }
 
-downloadRecipesByUrl :: (String -> IO T.Text) -> [String] -> IO [Recipe]
+downloadRecipesByUrl :: (String -> IO Text) -> [String] -> IO [Recipe]
 downloadRecipesByUrl grabber urls = do
   let download = downloadRecipeByUrl grabber
   sayLoud "Starting parallel download..."
