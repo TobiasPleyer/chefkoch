@@ -51,7 +51,7 @@ instance Stream TagStream where
           }
   reachOffsetNoLine o pst = undefined
 
-type Parser = Parsec Void TagStream
+type Parser m a = ParsecT Void TagStream m a
 
 returnParseResult :: Stream s => Either (ParseErrorBundle s Void) a -> Either String a
 returnParseResult res = case res of
@@ -60,86 +60,86 @@ returnParseResult res = case res of
 
 -- Parser wrappers around the TagSoup matchers
 
-anyTag_ :: Parser TagToken
+anyTag_ :: Parser m TagToken
 anyTag_ = satisfy (const True)
 
-anyTagOpen_ :: Parser TagToken
+anyTagOpen_ :: Parser m TagToken
 anyTagOpen_ = satisfy isTagOpen
 
-anyTagClose_ :: Parser TagToken
+anyTagClose_ :: Parser m TagToken
 anyTagClose_ = satisfy isTagClose
 
-anyTagWarning_ :: Parser TagToken
+anyTagWarning_ :: Parser m TagToken
 anyTagWarning_ = satisfy isTagWarning
 
-anyTagPosition_ :: Parser TagToken
+anyTagPosition_ :: Parser m TagToken
 anyTagPosition_ = satisfy isTagPosition
 
-anyTagComment_ :: Parser TagToken
+anyTagComment_ :: Parser m TagToken
 anyTagComment_ = satisfy isTagComment
 
-anyTagText_ :: Parser TagToken
+anyTagText_ :: Parser m TagToken
 anyTagText_ = satisfy isTagText
 
-tagOpen_ :: Text -> Parser TagToken
+tagOpen_ :: Text -> Parser m TagToken
 tagOpen_ s = satisfy (isTagOpenName s)
 
-tagOpenAttrs_ :: Text -> [Attribute Text] -> Parser TagToken
+tagOpenAttrs_ :: Text -> [Attribute Text] -> Parser m TagToken
 tagOpenAttrs_ s attrs = satisfy (TagOpen s attrs ~==)
 
-tagOpenAttrNameLit_ :: Text -> Text -> (Text -> Bool) -> Parser TagToken
+tagOpenAttrNameLit_ :: Text -> Text -> (Text -> Bool) -> Parser m TagToken
 tagOpenAttrNameLit_ t a p = satisfy (TSM.tagOpenAttrNameLit t a p)
 
-tagClose_ :: Text -> Parser TagToken
+tagClose_ :: Text -> Parser m TagToken
 tagClose_ s = satisfy (isTagCloseName s)
 
-anyEmptyTagText :: Parser TagToken
+anyEmptyTagText :: Parser m TagToken
 anyEmptyTagText = satisfy (\t -> isTagText t && isEmpty (fromTagText t))
   where
     isEmpty = T.null . T.strip
 
 consumeEmptyTags = optional (many (anyEmptyTagText <|> anyTagComment))
 
-anyTag :: Parser TagToken
+anyTag :: Parser m TagToken
 anyTag = anyTag_ <* consumeEmptyTags
 
-anyTagOpen :: Parser TagToken
+anyTagOpen :: Parser m TagToken
 anyTagOpen = anyTagOpen_ <* consumeEmptyTags
 
-anyTagClose :: Parser TagToken
+anyTagClose :: Parser m TagToken
 anyTagClose = anyTagClose_ <* consumeEmptyTags
 
-anyTagWarning :: Parser TagToken
+anyTagWarning :: Parser m TagToken
 anyTagWarning = anyTagWarning_ <* consumeEmptyTags
 
-anyTagPosition :: Parser TagToken
+anyTagPosition :: Parser m TagToken
 anyTagPosition = anyTagPosition_ <* consumeEmptyTags
 
-anyTagComment :: Parser TagToken
+anyTagComment :: Parser m TagToken
 anyTagComment = anyTagComment_ <* consumeEmptyTags
 
-anyTagText :: Parser TagToken
+anyTagText :: Parser m TagToken
 anyTagText = anyTagText_ <* consumeEmptyTags
 
-tagOpen :: Text -> Parser TagToken
+tagOpen :: Text -> Parser m TagToken
 tagOpen s = tagOpen_ s <* consumeEmptyTags
 
-tagOpenAttrs :: Text -> [Attribute Text] -> Parser TagToken
+tagOpenAttrs :: Text -> [Attribute Text] -> Parser m TagToken
 tagOpenAttrs s attrs = tagOpenAttrs_ s attrs <* consumeEmptyTags
 
-tagOpenAttrNameLit :: Text -> Text -> (Text -> Bool) -> Parser TagToken
+tagOpenAttrNameLit :: Text -> Text -> (Text -> Bool) -> Parser m TagToken
 tagOpenAttrNameLit t a p = tagOpenAttrNameLit_ t a p <* consumeEmptyTags
 
-tagClose :: Text -> Parser TagToken
+tagClose :: Text -> Parser m TagToken
 tagClose s = tagClose_ s <* consumeEmptyTags
 
-getText :: Parser Text
+getText :: Parser m Text
 getText = T.strip . fromTagText <$> anyTagText
 
-getText_ :: Parser Text
+getText_ :: Parser m Text
 getText_ = T.strip . fromTagText <$> anyTagText_
 
-getString :: Parser String
+getString :: Parser m String
 getString = T.unpack <$> getText
 
 findEndTag str = go 0

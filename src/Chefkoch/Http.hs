@@ -1,4 +1,10 @@
-module Chefkoch.Http where
+module Chefkoch.Http
+  ( Grabber (..),
+    download,
+    downloadAndTag,
+    downloadWith,
+  )
+where
 
 import Chefkoch.DataFunctions
 import Chefkoch.DataTypes
@@ -18,155 +24,51 @@ import Network.Wreq
 import System.IO
 import System.Process
 
-openURL :: String -> IO Text
+data Grabber
+  = SimpleHTTP
+  | WGet
+  | WReq
+  | File
+  deriving (Eq, Ord, Show)
+
+type GrabberFunc = String -> IO Text
+
+openURL :: GrabberFunc
 openURL url = fmap T.pack $ getResponseBody =<< simpleHTTP (getRequest url)
 
-wgetURL :: String -> IO Text
+wgetURL :: GrabberFunc
 wgetURL url = do
   let wgetPath = "/usr/bin/wget"
       wgetArgs = [url, "-qO-"]
   htmlString <- readProcess wgetPath wgetArgs ""
   return (T.pack htmlString)
 
-wreqURL :: String -> IO Text
+wreqURL :: GrabberFunc
 wreqURL url = TL.toStrict . TL.decodeUtf8 . flip (^.) responseBody <$> get url
 
-fileURL :: String -> IO Text
+fileURL :: GrabberFunc
 fileURL = TIO.readFile
 
-downloadMonthlyRecipeListing :: (String -> IO Text) -> Year -> Month -> IO Text
-downloadMonthlyRecipeListing grabber year month = do
-  let url =
-        "https://www.chefkoch.de/rezept-des-tages.php?month="
-          <> show (month2Int month)
-          <> "&year="
-          <> show year
-  downloadRecipePage grabber url
+grabberFunc :: Grabber -> GrabberFunc
+grabberFunc SimpleHTTP = openURL
+grabberFunc WGet = wgetURL
+grabberFunc WReq = wreqURL
+grabberFunc File = fileURL
 
-downloadRecipePage :: (String -> IO Text) -> String -> IO Text
-downloadRecipePage grabber url = do
+downloadUrl :: GrabberFunc -> String -> IO Text
+downloadUrl f url = do
   sayLoud $ "Downloading URL: " ++ url
-  grabber url
+  f url
 
-downloadRecipesByDate ::
-  -- | the grabber to use for download
-  (String -> IO Text) ->
-  -- | sparse or full download
-  Bool ->
-  -- | date selection criteria
-  (Maybe Year, Maybe Month, Maybe Day) ->
-  IO [Recipe]
-downloadRecipesByDate grabber sparse (my, mm, md) = do
-  sayLoud "Downloading recipes by date"
-  (year, month) <- yearMonthFromMaybe (my, mm)
-  monthlyListing <- downloadMonthlyRecipeListing grabber year month
-  sayLoud "Parsing monthly listing..."
-  let partialRecipesParseResult = parseMonthlyRecipeListing monthlyListing
-  case partialRecipesParseResult of
-    Left err -> do
-      sayLoud "Unable to parse monthly recipe listing. Reason:"
-      putStrLn err
-      return []
-    Right recipeInfos -> do
-      sayLoud "Parse succeeded"
-      let recipeInfoSelection = selectRecipesByDay md recipeInfos
-      if sparse
-        then return $ map mkPartialRecipe recipeInfoSelection
-        else
-          reverse
-            <$> foldM
-              ( \rs (day, weekday, name, url) -> do
-                  recipeDetails <- parseRecipePage <$> downloadRecipePage grabber url
-                  case recipeDetails of
-                    Left err -> do
-                      putStrLn $ "Error! Url: " ++ url ++ "\n" ++ err
-                      return rs
-                    Right (title, ingredients, instructions) ->
-                      return $
-                        Recipe
-                          { recipeDay = Just day,
-                            recipeWeekday = Just weekday,
-                            recipeMonth = Just month,
-                            recipeYear = Just year,
-                            recipeName = name,
-                            recipeUrl = url,
-                            recipeIngredients = ingredients,
-                            recipeInstruction = instructions
-                          }
-                          : rs
-              )
-              []
-              recipeInfoSelection
+download :: [String] -> IO [Text]
+download = downloadWith WReq
 
-downloadRecipeByUrl :: (String -> IO Text) -> String -> IO (Either String Recipe)
-downloadRecipeByUrl grabber url = do
-  recipePageSource <- downloadRecipePage grabber url
-  let parseResult = parseRecipePage recipePageSource
-  case parseResult of
-    Left err -> return $ Left err
-    Right (title, ingr, inst) ->
-      return $
-        Right
-          emptyRecipe
-            { recipeUrl = url,
-              recipeName = title,
-              recipeIngredients = ingr,
-              recipeInstruction = inst
-            }
+downloadAndTag :: [String] -> IO [(String, Text)]
+downloadAndTag urls = zip urls <$> downloadWith WReq urls
 
-downloadRecipesByUrl :: (String -> IO Text) -> [String] -> IO [Recipe]
-downloadRecipesByUrl grabber urls = do
-  let download = downloadRecipeByUrl grabber
+downloadWith :: Grabber -> [String] -> IO [Text]
+downloadWith _ [] = return []
+downloadWith grabber [url] = (: []) <$> downloadUrl (grabberFunc grabber) url
+downloadWith grabber urls = do
   sayLoud "Starting parallel download..."
-  eRecipes <- mapConcurrently download urls
-  foldM
-    ( \rs eRecipe -> case eRecipe of
-        Left err -> do
-          putStrLn err
-          return rs
-        Right r -> return (r : rs)
-    )
-    []
-    eRecipes
-
--- Simple helpers
-
-wgetDownloadRecipePage = downloadRecipePage wgetURL
-
-wreqDownloadRecipePage = downloadRecipePage wreqURL
-
-openDownloadRecipePage = downloadRecipePage openURL
-
-fileDownloadRecipePage = downloadRecipePage fileURL
-
-wgetDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing wgetURL
-
-wreqDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing wreqURL
-
-openDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing openURL
-
-fileDownloadMonthlyRecipeListing = downloadMonthlyRecipeListing fileURL
-
-wgetDownloadRecipesByDate = downloadRecipesByDate wgetURL
-
-wreqDownloadRecipesByDate = downloadRecipesByDate wreqURL
-
-openDownloadRecipesByDate = downloadRecipesByDate openURL
-
-fileDownloadRecipesByDate = downloadRecipesByDate fileURL
-
-wgetDownloadRecipeByUrl = downloadRecipeByUrl wgetURL
-
-wreqDownloadRecipeByUrl = downloadRecipeByUrl wreqURL
-
-openDownloadRecipeByUrl = downloadRecipeByUrl openURL
-
-fileDownloadRecipeByUrl = downloadRecipeByUrl fileURL
-
-wgetDownloadRecipesByUrl = downloadRecipesByUrl wgetURL
-
-wreqDownloadRecipesByUrl = downloadRecipesByUrl wreqURL
-
-openDownloadRecipesByUrl = downloadRecipesByUrl openURL
-
-fileDownloadRecipesByUrl = downloadRecipesByUrl fileURL
+  mapConcurrently (downloadUrl (grabberFunc grabber)) urls
