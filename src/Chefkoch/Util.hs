@@ -44,47 +44,9 @@ yearMonthFromMaybe (my, mm) = do
       month = fromMaybe currMonth mm
   return (year, month)
 
-selectRecipesByDay :: Maybe Day -> [(Day, Weekday, String, String)] -> [(Day, Weekday, String, String)]
+selectRecipesByDay :: Maybe Day -> [(Day, String, String)] -> [(Day, String, String)]
 selectRecipesByDay Nothing recipeInfos = recipeInfos
 selectRecipesByDay (Just day) recipeInfos =
-  case find (\(d, w, name, url) -> d == day) recipeInfos of
+  case find (\(d, name, url) -> d == day) recipeInfos of
     Nothing -> []
-    Just (d, w, name, url) -> [(d, w, name, url)]
-
-emptyRecipe = Recipe Nothing Nothing Nothing Nothing "" "" [] ""
-
-modifyRecipeYear :: Maybe Year -> Recipe -> Recipe
-modifyRecipeYear y r = r {recipeYear = y}
-
-modifyRecipeMonth :: Maybe Month -> Recipe -> Recipe
-modifyRecipeMonth m r = r {recipeMonth = m}
-
-modifyRecipeDay :: Maybe Day -> Recipe -> Recipe
-modifyRecipeDay d r = r {recipeDay = d}
-
-modifyRecipeWeekday :: Maybe Weekday -> Recipe -> Recipe
-modifyRecipeWeekday w r = r {recipeWeekday = w}
-
-modifyRecipeUrl :: String -> Recipe -> Recipe
-modifyRecipeUrl u r = r {recipeUrl = u}
-
-modifyRecipeName :: String -> Recipe -> Recipe
-modifyRecipeName n r = r {recipeUrl = n}
-
-modifyRecipeIngredients :: [String] -> Recipe -> Recipe
-modifyRecipeIngredients ingr r = r {recipeIngredients = ingr}
-
-modifyRecipeInstruction :: String -> Recipe -> Recipe
-modifyRecipeInstruction inst r = r {recipeInstruction = inst}
-
-mkPartialRecipe :: (Day, Weekday, String, String) -> Recipe
-mkPartialRecipe (day, weekday, name, url) =
-  Recipe
-    (Just day)
-    (Just weekday)
-    Nothing
-    Nothing
-    name
-    url
-    []
-    ""
+    Just (d, name, url) -> [(d, name, url)]

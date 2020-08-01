@@ -61,24 +61,3 @@ unsafeInt2Month n = case n of
   11 -> November
   12 -> December
   _ -> undefined
-
-str2Weekday :: String -> Maybe Weekday
-str2Weekday "(Mo)" = Just Monday
-str2Weekday "(Di)" = Just Tuesday
-str2Weekday "(Mi)" = Just Wednesday
-str2Weekday "(Do)" = Just Thursday
-str2Weekday "(Fr)" = Just Friday
-str2Weekday "(Sa)" = Just Saturday
-str2Weekday "(So)" = Just Sunday
-str2Weekday _ = Nothing
-
-int2Weekday :: Int -> Maybe Weekday
-int2Weekday n = case n of
-  1 -> Just Monday
-  2 -> Just Tuesday
-  3 -> Just Wednesday
-  4 -> Just Thursday
-  5 -> Just Friday
-  6 -> Just Saturday
-  7 -> Just Sunday
-  _ -> Nothing

@@ -1,22 +1,10 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Chefkoch.Types where
 
 import Data.Aeson
-import qualified Data.Text as T
-
-data Weekday
-  = Monday
-  | Tuesday
-  | Wednesday
-  | Thursday
-  | Friday
-  | Saturday
-  | Sunday
-  deriving (Eq, Show)
-
-instance ToJSON Weekday where
-  toJSON = String . T.pack . show
+import GHC.Generics
 
 data Month
   = January
@@ -31,46 +19,36 @@ data Month
   | October
   | November
   | December
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
-instance ToJSON Month where
-  toJSON = String . T.pack . show
+instance ToJSON Month
 
 type Day = Int
 
 type Year = Int
 
+data RecipeMeta = RecipeMeta
+  { metaRating :: Double,
+    metaPrepTime :: Int,
+    metaDifficulty :: String,
+    metaKCalories :: Int,
+    metaTags :: [String],
+    metaAuthor :: String
+  }
+  deriving (Eq, Show, Generic)
+
+instance ToJSON RecipeMeta
+
+type Date = (Day, Month, Year)
+
 data Recipe = Recipe
-  { recipeDay :: Maybe Day,
-    recipeWeekday :: Maybe Weekday,
-    recipeMonth :: Maybe Month,
-    recipeYear :: Maybe Year,
+  { recipeDate :: Date,
     recipeName :: String,
     recipeUrl :: String,
     recipeIngredients :: [String],
-    recipeInstruction :: String
+    recipeInstruction :: [String],
+    recipeMeta :: RecipeMeta
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
-instance ToJSON Recipe where
-  toJSON
-    ( Recipe
-        rDay
-        rWeekday
-        rMonth
-        rYear
-        rName
-        rUrl
-        rIngredients
-        rInstructions
-      ) =
-      object
-        [ "Day" .= rDay,
-          "Weekday" .= rWeekday,
-          "Month" .= rMonth,
-          "Year" .= rYear,
-          "Name" .= rName,
-          "Url" .= rUrl,
-          "Ingredients" .= rIngredients,
-          "Instructions" .= rInstructions
-        ]
+instance ToJSON Recipe

@@ -17,6 +17,16 @@ import Data.Void (Void (..))
 import Text.HTML.TagSoup ((~/=), (~==))
 import qualified Text.HTML.TagSoup as TS
 import Text.Megaparsec
+  ( (<|>),
+    choice,
+    getInput,
+    many,
+    optional,
+    satisfy,
+    sepBy1,
+    setInput,
+    skipManyTill,
+  )
 import Text.Megaparsec.Debug (dbg)
 
 --parseMonthlyRecipeListing :: Text -> Either String [(Day, Weekday, String, String)]
@@ -48,6 +58,36 @@ import Text.Megaparsec.Debug (dbg)
 
 recipeParser :: Parser IO Recipe
 recipeParser = undefined
+
+metaParser :: Parser IO RecipeMeta
+metaParser = undefined
+
+avgParser :: Parser IO Double
+avgParser = undefined
+
+preptimeParser :: Parser IO Int
+preptimeParser = undefined
+
+difficultyParser :: Parser IO String
+difficultyParser = undefined
+
+dateParser :: Parser IO Date
+dateParser = undefined
+
+kcaloriesParser :: Parser IO Int
+kcaloriesParser = undefined
+
+ingredientsParser :: Parser IO [String]
+ingredientsParser = undefined
+
+instructionsParser :: Parser IO [String]
+instructionsParser = undefined
+
+tagsParser :: Parser IO [String]
+tagsParser = undefined
+
+authorParser :: Parser IO String
+authorParser = undefined
 
 --  where
 --    pRecipePage = do
