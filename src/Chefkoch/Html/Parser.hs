@@ -37,33 +37,6 @@ import Text.Megaparsec
   )
 import Text.Megaparsec.Debug (dbg)
 
---parseMonthlyRecipeListing :: Text -> Either String [(Day, Weekday, String, String)]
---parseMonthlyRecipeListing = returnParseResult . parse pMonthlyListing "" . TS.parseTags
---  where
---    pMonthlyListing :: Parser [(Day, Weekday, String, String)]
---    pMonthlyListing = do
---      skipManyTill anyTag pRecipeTableStart
---      rows <- many pRecipeTableRow
---      tagClose "table"
---      return rows
---    pRecipeTableStart :: Parser TagToken
---    pRecipeTableStart = tagOpenAttrNameLit "table" "class" (== "table-day")
---    pRecipeTableRow :: Parser (Day, Weekday, String, String)
---    pRecipeTableRow =
---      inside "tr" $ do
---        (day, weekday) <- inside "td" $ do
---          day <- read . T.unpack . T.init . T.filter (not . isSpace) <$> getText
---          weekday <- inside "span" $ str2Weekday . T.unpack . T.filter (not . isSpace) <$> getText
---          case weekday of
---            Just weekday' -> return (day, weekday')
---            Nothing -> fail "Unable to parse day and weekday"
---        (url, name) <- inside "td" $ do
---          url <- TS.fromAttrib "href" <$> tagOpen "a"
---          name <- getText
---          tagClose "a"
---          return (T.unpack url, T.unpack name)
---        return (day, weekday, name, url)
-
 recipeParser :: String -> Parser IO Recipe
 recipeParser url = do
   skipUntil $ tagOpen "h1"
@@ -236,3 +209,7 @@ getAllText = go ""
     textRelated (TagOpen t _) = t `elem` ["sup", "sub", "b", "i"]
     textRelated (TagClose t) = t `elem` ["sup", "sub", "b", "i"]
     textRelated _ = False
+
+recipeOfTheDayParser :: String -> Parser IO String
+recipeOfTheDayParser _ = do
+  return "/rezepte/1134771219763567"

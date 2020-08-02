@@ -7,8 +7,8 @@ import Chefkoch.CmdLine
 import Chefkoch.DataFunctions
 import Chefkoch.Format
 import Chefkoch.Html.Megaparsec
-import Chefkoch.Html.Parser (recipeParser)
-import Chefkoch.Http (Grabber (..), downloadAndTag)
+import Chefkoch.Html.Parser (recipeOfTheDayParser, recipeParser)
+import Chefkoch.Http (Grabber (..), download, downloadAndTag)
 import Chefkoch.Util
 import Control.Exception.Base (bracket)
 import Control.Monad
@@ -35,24 +35,26 @@ run opts@Options {..} = do
   setVerbosity $ if optionVerbose then Loud else Normal
   sayLoud "Starting execution"
   sayLoud $ "Options: " <> show opts
-  let month = fmap unsafeInt2Month optionMonth
-  sayLoud $ "Month: " <> show month
   taggedSources <-
-    if optionRandom
-      then do
-        sayLoud "Choosing at random..."
-        --(year, month, day) <- getRandomYearMonthDay
-        --wreqDownloadRecipesByDate optionUrlsOnly (Just year, Just month, Just day)
-        return []
-      else case optionUrl of
-        Just url -> do
-          sayLoud $ "Using URL: " <> url
-          downloadAndTag [url]
-        Nothing ->
-          --sayLoud $ "Using (year,month,day): " <> show (optionYear, month, optionDay)
-          --wreqDownloadRecipesByDate optionUrlsOnly (optionYear, month, optionDay)
-          return []
-  sayLoud $ "Successfully downloaded " <> show (length taggedSources) <> " recipes pages"
+    case optionUrl of
+      Nothing -> do
+        sayLoud "Choosing recipe of the day..."
+        let url = "https://www.chefkoch.de/rezept-des-tages/"
+        (html : _) <- download [url]
+        eSubUrl <- runParserT (recipeOfTheDayParser url) url (parseTags html)
+        case eSubUrl of
+          Left err -> do
+            putStrLn "Failed to extract today's recipe"
+            whenLoud $ rerunParsersDebug [(url, html)] [url] recipeOfTheDayParser
+            return []
+          Right subUrl -> do
+            let url' = "https://www.chefkoch.de" <> subUrl
+            sayLoud $ "Using URL: " <> url'
+            downloadAndTag [url']
+      Just url -> do
+        sayLoud $ "Using URL: " <> url
+        downloadAndTag [url]
+  sayLoud $ "Successfully downloaded " <> show (length taggedSources) <> " recipe pages"
   unless (null taggedSources) $ do
     parseResults <- mapM (\(url, html) -> first (url,) <$> runParserT (recipeParser url) url (parseTags html)) taggedSources
     let (fails, succs) = partitionEithers parseResults
@@ -61,19 +63,7 @@ run opts@Options {..} = do
       else do
         putStrLn $ show (length fails) <> " pages failed to parse."
         putStrLn $ show (length succs) <> " pages were parsed successfully."
-    whenLoud $ unless (null fails) $ do
-      let failedUrls = fmap fst fails
-      putStrLn "The following URLs failed:"
-      mapM_ (\u -> putStrLn $ "  - " <> u) failedUrls
-      putStrLn ""
-      putStrLn "Starting to re-run parsers with debug tracing"
-      forM_ failedUrls $ \u -> do
-        let html = snd . fromJust . find ((== u) . fst) $ taggedSources
-            (poss, tags) = partition isTagPosition . parseTagsOptions (parseOptions {optTagPosition = True}) $ html
-            posTuples = fmap (\case (TagPosition r c) -> (r, c)) poss
-        parseResult <- runParserT (recipeParser u) u tags
-        either (showParseErrorWithSource html 10 posTuples) (const . putStrLn $ u <> " did not fail again.") parseResult
-      putStrLn "Done"
+    whenLoud $ unless (null fails) $ rerunParsersDebug taggedSources (fmap fst fails) recipeParser
     let maybeFormatter = lookup optionFormat formatterMap
     formatter <- case maybeFormatter of
       Just fm -> return fm
@@ -84,6 +74,19 @@ run opts@Options {..} = do
     if optionOutput == "-"
       then BC.putStrLn formattedRecipes
       else BC.writeFile optionOutput formattedRecipes
+
+rerunParsersDebug urlSourceLookup urls parser = do
+  putStrLn "The following URLs failed:"
+  mapM_ (\u -> putStrLn $ "  - " <> u) urls
+  putStrLn ""
+  putStrLn "Starting to re-run parsers with debug tracing"
+  forM_ urls $ \u -> do
+    let html = snd . fromJust . find ((== u) . fst) $ urlSourceLookup
+        (poss, tags) = partition isTagPosition . parseTagsOptions (parseOptions {optTagPosition = True}) $ html
+        posTuples = fmap (\case (TagPosition r c) -> (r, c)) poss
+    parseResult <- runParserT (parser u) u tags
+    either (showParseErrorWithSource html 10 posTuples) (const . putStrLn $ u <> " did not fail again.") parseResult
+  putStrLn "Done"
 
 main = do
   options <- execParser optionParser
