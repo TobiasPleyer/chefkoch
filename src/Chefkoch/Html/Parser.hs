@@ -212,4 +212,18 @@ getAllText = go ""
 
 recipeOfTheDayParser :: String -> Parser IO String
 recipeOfTheDayParser _ = do
-  return "/rezepte/1134771219763567"
+  liftIO . sayLoud $ "Starting to parse recipe of the day"
+  skipUntil $ tagOpenAttrs "div" [("class", "card card-recipe recipe--today")]
+  liftIO . sayLoud $ "Found the container for today's recipe"
+  skipUntil $ tagOpenAttrs "div" [("class", "card__main")]
+  liftIO . sayLoud $ "Found the main container"
+  optional $ section "aside"
+  a <- tagOpen "a"
+  liftIO . sayLoud $ "Found the link tag"
+  let href = TS.fromAttrib "href" a
+  if T.null href
+    then fail "No href found"
+    else do
+      let href' = T.unpack href
+      liftIO . sayLoud $ "href: " <> href'
+      return href'
