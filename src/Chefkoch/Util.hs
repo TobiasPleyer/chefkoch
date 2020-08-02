@@ -67,7 +67,8 @@ showParseErrorWithSource source ctx poss (ParseErrorBundle errs posState) = do
   let sourceLines = T.lines source
   forM_ (NE.toList errs) $ \e -> do
     let offset = errorOffset e
-        (row, col) = poss !! offset
+        offset' = min offset (length poss - 1)
+        (row, col) = poss !! offset'
         -- TODO: This is not sophisticated enough
         relevantLines = take (2 * ctx) . drop (row - ctx) $ sourceLines
     putStrLn $ parseErrorPretty e
