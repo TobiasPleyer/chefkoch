@@ -74,8 +74,8 @@ chefkochOptions =
     <*> strOption
       ( long "format"
           <> short 'f'
-          <> value "yaml"
-          <> help "Specify the format to be used for output. Supported values: raw, yaml"
+          <> value "json"
+          <> help "Specify the format to be used for output. Supported values: raw, yaml, json (default)"
       )
     <*> switch
       ( long "verbose"
