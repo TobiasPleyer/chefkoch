@@ -7,7 +7,7 @@ import Chefkoch.CmdLine
 import Chefkoch.DataFunctions
 import Chefkoch.Format
 import Chefkoch.Html.Megaparsec
-import Chefkoch.Html.Parser (recipeParser, recipeParserDbg)
+import Chefkoch.Html.Parser (recipeParser)
 import Chefkoch.Http (Grabber (..), downloadAndTag)
 import Chefkoch.Util
 import Control.Exception.Base (bracket)
@@ -61,7 +61,7 @@ run opts@Options {..} = do
       else do
         putStrLn $ show (length fails) <> " pages failed to parse."
         putStrLn $ show (length succs) <> " pages were parsed successfully."
-    whenLoud $ do
+    whenLoud $ unless (null fails) $ do
       let failedUrls = fmap fst fails
       putStrLn "The following URLs failed:"
       mapM_ (\u -> putStrLn $ "  - " <> u) failedUrls
@@ -71,7 +71,7 @@ run opts@Options {..} = do
         let html = snd . fromJust . find ((== u) . fst) $ taggedSources
             (poss, tags) = partition isTagPosition . parseTagsOptions (parseOptions {optTagPosition = True}) $ html
             posTuples = fmap (\case (TagPosition r c) -> (r, c)) poss
-        parseResult <- runParserT (recipeParserDbg u) u tags
+        parseResult <- runParserT (recipeParser u) u tags
         either (showParseErrorWithSource html 10 posTuples) (const . putStrLn $ u <> " did not fail again.") parseResult
       putStrLn "Done"
     let maybeFormatter = lookup optionFormat formatterMap

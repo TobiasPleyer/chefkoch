@@ -236,38 +236,3 @@ getAllText = go ""
     textRelated (TagOpen t _) = t `elem` ["sup", "sub", "b", "i"]
     textRelated (TagClose t) = t `elem` ["sup", "sub", "b", "i"]
     textRelated _ = False
-
--- Debug wrapped versions of the parsers
-
-recipeParserDbg :: String -> Parser IO Recipe
-recipeParserDbg url = dbg "recipeParser" $ recipeParser url
-
---metaParserDbg :: Parser IO RecipeMeta
---metaParserDbg = dbg "metaParser" metaParser
---
---avgParserDbg :: Parser IO Double
---avgParserDbg = dbg "avgParser" avgParser
---
---preptimeParserDbg :: Parser IO Int
---preptimeParserDbg = dbg "preptimeParser" preptimeParser
---
---difficultyParserDbg :: Parser IO String
---difficultyParserDbg = dbg "difficultyParser" difficultyParser
---
---dateParserDbg :: Parser IO Date
---dateParserDbg = dbg "dateParser" dateParser
---
---kcaloriesParserDbg :: Parser IO Int
---kcaloriesParserDbg = dbg "kcaloriesParser" kcaloriesParser
---
---ingredientsParserDbg :: Parser IO [String]
---ingredientsParserDbg = dbg "ingredientsParser" ingredientsParser
---
---instructionsParserDbg :: Parser IO [String]
---instructionsParserDbg = dbg "instructionsParser" instructionsParser
---
---tagsParserDbg :: Parser IO [String]
---tagsParserDbg = dbg "tagsParser" tagsParser
---
---authorParserDbg :: Parser IO String
---authorParserDbg = dbg "authorParser" authorParser

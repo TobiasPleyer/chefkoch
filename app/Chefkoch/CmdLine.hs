@@ -26,7 +26,7 @@ chefkochOptions =
           ( long "year"
               <> short 'y'
               <> metavar "YEAR"
-              <> help "The year the recipe was published"
+              <> help "The year the recipe was published."
           )
       )
     <*> optional
@@ -35,7 +35,7 @@ chefkochOptions =
           ( long "month"
               <> short 'm'
               <> metavar "MONTH"
-              <> help "The month the recipe was published"
+              <> help "The month the recipe was published."
           )
       )
     <*> optional
@@ -44,7 +44,7 @@ chefkochOptions =
           ( long "day"
               <> short 'd'
               <> metavar "DAY"
-              <> help "The day the recipe was published"
+              <> help "The day the recipe was published."
           )
       )
     <*> optional
@@ -52,7 +52,7 @@ chefkochOptions =
           ( long "url"
               <> short 'u'
               <> metavar "URL"
-              <> help "The url of the recipe to be downloaded"
+              <> help "The url of the recipe to be downloaded."
           )
       )
     <*> switch
@@ -62,7 +62,7 @@ chefkochOptions =
     <*> switch
       ( long "random"
           <> short 'r'
-          <> help "Whether to choose a recipe at random"
+          <> help "Whether to choose a recipe at random."
       )
     <*> strOption
       ( long "output"
@@ -75,12 +75,12 @@ chefkochOptions =
       ( long "format"
           <> short 'f'
           <> value "json"
-          <> help "Specify the format to be used for output. Supported values: raw, yaml, json (default)"
+          <> help "Specify the format to be used for output. Supported values: raw, yaml, json (default)."
       )
     <*> switch
       ( long "verbose"
           <> short 'v'
-          <> help "Send more info about program execution to stdout"
+          <> help "Send more info about program execution to stdout."
       )
 
 optionParser =
