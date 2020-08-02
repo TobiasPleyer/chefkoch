@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c05b4a0a8abb599c38d40a42e95e330598ff2beadffcb0a2873d7968ecb77261
+-- hash: b5fa10d60cdba3b2428f014f716d420c49863ab0c519486a774e82b1cc73a80f
 
 name:           chefkoch
-version:        2.0.0.0
+version:        2.1.0.0
 description:    Please see the README on Github at <https://github.com/TobiasPleyer/chefkoch#readme>
 homepage:       https://github.com/TobiasPleyer/chefkoch#readme
 bug-reports:    https://github.com/TobiasPleyer/chefkoch/issues

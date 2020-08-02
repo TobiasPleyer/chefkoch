@@ -72,55 +72,29 @@ Linking /path_to_repo/chefkoch/dist-newstyle/.../chefkoch ...
 $ chefkoch --help
 chefkoch - a web crawler for the www.chefkoch.de cooking website
 
-Usage: chefkoch [-y|--year YEAR] [-m|--month MONTH] [-d|--day DAY]
-                [-u|--url URL] [--urls-only] [-r|--random] [-o|--output FILE]
-                [-f|--format ARG] [-v|--verbose]
+Usage: chefkoch [-u|--url URL] [-o|--output FILE] [-f|--format ARG]
+                [-v|--verbose]
   Download the bare ingredients and cooking informations, without all the
   clutter.
 
 Available options:
-  -y,--year YEAR           The year the recipe was published
-  -m,--month MONTH         The month the recipe was published
-  -d,--day DAY             The day the recipe was published
-  -u,--url URL             The url of the recipe to be downloaded
-  --urls-only              Don't look for the ingredients and instructions, just
-                           fetch the URLs belonging to the recipes.
-  -r,--random              Whether to choose a recipe at random
+  -u,--url URL             The url of the recipe to be downloaded.
   -o,--output FILE         The name of the file to write the output to.
   -f,--format ARG          Specify the format to be used for output. Supported
-                           values: raw, yaml, json (default)
-  -v,--verbose             Send more info about program execution to stdout
+                           values: raw, yaml, json (default).
+  -v,--verbose             Send more info about program execution to stdout.
   -h,--help                Show this help text
 ```
 
-The chefkoch script basically has two operation modes: custom or recipe of the
-day. In custom mode any recipe can be downloaded by providing the URL. This is
+The chefkoch script basically has two operation modes: direct URL or recipe of
+the day. In URL mode any recipe can be downloaded by providing the URL. This is
 done via the *-u/--url* option.
 
-The recipe of the day mode is different. It can be used to select recipes from
-the [rezept-des-tages listing]. This is a data base of featured recipes. Every
-day one recipe gets featured, thus every year, month, day combination
-corresponds to one specific recipe. The chefkoch script allows to download
-these recipes by specifying the year, month and day via the *-y/--year*,
-*-m/--month* and *-d/--day* selectors. The selection process follows the
-following logic:
-
-    1. If only the year selector is given, the script will take the current
-       month as the value for the month selector and then download all recipes
-       for this year and month.
-    2. If only the month selector is given, the script will take the current
-       year as the value for the year selector and then download all recipes
-       for this year and month.
-    3. If only the day selector is given, the script will take the current
-       month as the value for the month selector and the current year as the
-       value for the year selector and then download the recipe for this year,
-       month and day.
-    4. If the day selector is given together with either a year or a month
-       selector, then the script will use the value of the current month/year
-       for the missing selector and then download the recipe for this year,
-       month and day.
-    5. If only all three selectors are given then the script will download the
-       recipe for this exact selection.
+The recipe of the day mode is the default and automatically active if the
+*-u/--url* is not given. It can be used to select recipes from the
+[rezept-des-tages listing]. This is a data base of featured recipes. Every day
+one recipe gets featured. The chefkoch script allows you to download the recipe
+of the current day.
 
 Currently the following output formats are supported:
 
@@ -128,10 +102,9 @@ Currently the following output formats are supported:
     * yaml
     * raw
 
-Per default chefkoch will write all recipe information in the file *recipe* in
-the current working directory. This can be changed with the *-o/--output*
-option.  If the information shall be sent to stdout, use **-** as the file
-specifier.
+Per default chefkoch will write all recipe information to standard out. This
+can be changed with the *-o/--output* option. With this option you can provide
+a file name to write the information to.
 
 [rezept-des-tages listing]: https://www.chefkoch.de/rezept-des-tages.php
 
@@ -146,15 +119,15 @@ $ chefkoch --url https://www.chefkoch.de/rezepte/1113761217428134/Brauhaus-Gulas
 ```
 
 ```
-$ chefkoch -y 2016 -m 3
+$ chefkoch
 ```
 
 ```
-$ chefkoch -y 2015 -m 6 -d 12 --urls-only
+$ chefkoch -v -f yaml
 ```
 
 ```
-$ chefkoch -y 2017 --format=json -o-
+$ chefkoch --format=yaml -o ./recipe.yaml
 ```
 
 ## Nix
