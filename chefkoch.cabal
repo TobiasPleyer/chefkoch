@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 79ddb410be2e152f3db50a815d1a9284205bf5f4bcbcb0e7a653c231c34b1446
+-- hash: c05b4a0a8abb599c38d40a42e95e330598ff2beadffcb0a2873d7968ecb77261
 
 name:           chefkoch
 version:        2.0.0.0
@@ -25,6 +25,17 @@ source-repository head
   location: https://github.com/TobiasPleyer/chefkoch
 
 library
+  exposed-modules:
+      Chefkoch.DataFunctions
+      Chefkoch.Format
+      Chefkoch.Html.Megaparsec
+      Chefkoch.Html.Parser
+      Chefkoch.Html.Util
+      Chefkoch.Http
+      Chefkoch.Types
+      Chefkoch.Util
+  other-modules:
+      Paths_chefkoch
   hs-source-dirs:
       src
   other-extensions: CPP ForeignFunctionInterface OverloadedStrings RecordWildCards
@@ -48,21 +59,13 @@ library
     , transformers
     , wreq
     , yaml
-  exposed-modules:
-      Chefkoch.DataFunctions
-      Chefkoch.Types
-      Chefkoch.Format
-      Chefkoch.Html.Megaparsec
-      Chefkoch.Html.Parser
-      Chefkoch.Html.Util
-      Chefkoch.Http
-      Chefkoch.Util
-  other-modules:
-      Paths_chefkoch
   default-language: Haskell2010
 
 executable chefkoch
   main-is: Main.hs
+  other-modules:
+      Chefkoch.CmdLine
+      Paths_chefkoch
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -75,7 +78,4 @@ executable chefkoch
     , optparse-applicative
     , tagsoup
     , text
-  other-modules:
-      Chefkoch.CmdLine
-      Paths_chefkoch
   default-language: Haskell2010
